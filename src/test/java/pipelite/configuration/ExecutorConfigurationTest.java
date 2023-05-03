@@ -47,6 +47,7 @@ import pipelite.test.configuration.PipeliteTestConfigWithConfigurations;
       // SLURM
       "pipelite.executor.simpleSlurm.memory=1", // SimpleSlurmExecutorParameters
       "pipelite.executor.simpleSlurm.cpu=1", // SimpleSlurmExecutorParameters
+      "pipelite.executor.simpleSlurm.account=ACCOUNT", // SimpleSlurmExecutorParameters
       "pipelite.executor.simpleSlurm.queue=QUEUE", // SimpleSlurmExecutorParameters
       "pipelite.executor.simpleSlurm.memoryTimeout=15s", // SimpleSlurmExecutorParameters
       "pipelite.executor.simpleSlurm.logDir=LOG_DIR", // AsyncCmdExecutorParameters
@@ -197,6 +198,7 @@ public class ExecutorConfigurationTest {
   public void slurmProperties() {
     assertThat(config.getSimpleSlurm().getMemory()).isEqualTo(1);
     assertThat(config.getSimpleSlurm().getCpu()).isEqualTo(1);
+    assertThat(config.getSimpleSlurm().getAccount()).isEqualTo("ACCOUNT");
     assertThat(config.getSimpleSlurm().getQueue()).isEqualTo("QUEUE");
     assertThat(config.getSimpleSlurm().getLogDir()).isEqualTo("LOG_DIR");
     assertThat(config.getSimpleSlurm().getLogTimeout()).isEqualTo(Duration.ofMinutes(1));
@@ -215,6 +217,7 @@ public class ExecutorConfigurationTest {
 
     assertThat(params.getMemory()).isNull();
     assertThat(params.getCpu()).isNull();
+    assertThat(params.getAccount()).isNull();
     assertThat(params.getQueue()).isNull();
     assertThat(params.getLogDir()).isNull();
     assertThat(params.getLogTimeout()).isEqualTo(AsyncCmdExecutorParameters.DEFAULT_LOG_TIMEOUT);
@@ -229,6 +232,7 @@ public class ExecutorConfigurationTest {
 
     assertThat(params.getMemory()).isEqualTo(1);
     assertThat(params.getCpu()).isEqualTo(1);
+    assertThat(params.getAccount()).isEqualTo("ACCOUNT");
     assertThat(params.getQueue()).isEqualTo("QUEUE");
     assertThat(params.getLogDir()).isEqualTo("LOG_DIR");
     assertThat(params.getLogTimeout()).isEqualTo(Duration.ofMinutes(1));

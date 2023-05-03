@@ -1,6 +1,6 @@
 spring:
   profiles:
-      default: pipelite
+    default: pipelite
   jpa:
     show-sql: true
     properties:
@@ -9,27 +9,31 @@ spring:
 pipelite:
   test:
     kubernetes:
-      kubeconfig: ${PIPELITE_TEST_KUBERNETES_KUBECONFIG:}
-      namespace: ${PIPELITE_TEST_KUBERNETES_NAMESPACE:}
+      kubeconfig: /Users/rasko/Kubernetes-cluster.yaml
+      namespace: pipelite
     lsf:
-      host: ${PIPELITE_TEST_LSF_HOST:}
-      user: ${PIPELITE_TEST_LSF_USER:}
-      logDir: ${PIPELITE_TEST_LSF_LOG_DIR:}
-      definitionDir: ${PIPELITE_TEST_LSF_DEFINITION_DIR:}
-      queue: ${PIPELITE_TEST_LSF_QUEUE:}
+      host: codon-login-01
+      user: rasko
+      logDir: /hps/nobackup/tburdett/ena/test
+      definitionDir: test
+      queue: short
     slurm:
-      host: ${PIPELITE_TEST_SLURM_HOST:}
-      user: ${PIPELITE_TEST_SLURM_USER:}
-      logDir: ${PIPELITE_TEST_SLURM_LOG_DIR:}
-      definitionDir: ${PIPELITE_TEST_SLURM_DEFINITION_DIR:}
-      queue: ${PIPELITE_TEST_SLURM_QUEUE:}
+      host: codon-slurm-login
+      user: era
+      logDir: /hps/nobackup/tburdett/ena/test
+      definitionDir: test
+      queue: standard
     ssh:
-      host: ${PIPELITE_TEST_SSH_HOST:}
-      user: ${PIPELITE_TEST_SSH_USER:}
+      host: codon-login-01
+      user: rasko
   datasource:
-    driverClassName: ${PIPELITE_TEST_DATABASE_DRIVER:}
-    url: ${PIPELITE_TEST_DATABASE_URL:}
-    username: ${PIPELITE_TEST_DATABASE_USERNAME:}
-    password: ${PIPELITE_TEST_DATABASE_PASSWORD:}
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://pgsql-dlvm-080:5432/enapdev
+    username: pipelite
+    password: mateguas
+    # driverClassName: oracle.jdbc.driver.OracleDriver
+    # url: jdbc:oracle:thin:@//ora-dlvm-125.ebi.ac.uk:1521/eradevt
+    # username: era
+    # password: eradevt1
     maxActive: 25
     ddlAuto: none

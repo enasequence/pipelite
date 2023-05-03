@@ -120,6 +120,11 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
     }
     script.shortOption("t", String.valueOf(timeout.toMinutes()));
 
+    String account = getExecutorParams().getAccount();
+    if (account != null) {
+      script.shortOption("A", account);
+    }
+
     String queue = getExecutorParams().getQueue();
     if (queue != null) {
       script.shortOption("p", queue);

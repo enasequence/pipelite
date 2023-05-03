@@ -141,4 +141,64 @@ public class SimpleSlurmExecutorSubmitCmdTest {
                 + " 2>&1\n"
                 + "EOF");
   }
+
+  @Test
+  public void cmdAccount() throws IOException {
+
+    SimpleSlurmExecutor executor = new SimpleSlurmExecutor();
+    executor.setCmd("test");
+    SimpleSlurmExecutorParameters params =
+        SimpleSlurmExecutorParameters.builder()
+            .logDir(Files.createTempDirectory("TEMP").toString())
+            .cpu(2)
+            .memory(1)
+            .memoryUnits("M")
+            .account("ACCOUNT")
+            .queue("TEST")
+            .timeout(Duration.ofMinutes(1))
+            .build();
+    executor.setExecutorParams(params);
+
+    Stage stage = Stage.builder().stageName(STAGE_NAME).executor(executor).build();
+    StageExecutorRequest request =
+        StageExecutorRequest.builder()
+            .pipelineName(PIPELINE_NAME)
+            .processId(PROCESS_ID)
+            .stage(stage)
+            .build();
+
+    String logDir = new SlurmLogFilePathResolver().resolvedPath().dir(request);
+    String logFileName = new SlurmLogFilePathResolver().fileName(request);
+
+    executor.setOutFile(new SlurmLogFilePathResolver().resolvedPath().dir(request));
+
+    String submitCmd = executor.getSubmitCmd(request);
+    assertThat(submitCmd)
+        .isEqualTo(
+            "sbatch << EOF\n"
+                + "#!/bin/bash\n"
+                + "#SBATCH --job-name=\""
+                + PIPELINE_NAME
+                + ":"
+                + STAGE_NAME
+                + ":"
+                + PROCESS_ID
+                + "\"\n"
+                + "#SBATCH --output=\"/dev/null\"\n"
+                + "#SBATCH --error=\"/dev/null\"\n"
+                + "#SBATCH -n 2\n"
+                + "#SBATCH --mem=\"1M\"\n"
+                + "#SBATCH -t 1\n"
+                + "#SBATCH -A ACCOUNT\n"
+                + "#SBATCH -p TEST\n"
+                + "mkdir -p "
+                + logDir
+                + "\n"
+                + "test > "
+                + logDir
+                + "/"
+                + logFileName
+                + " 2>&1\n"
+                + "EOF");
+  }
 }

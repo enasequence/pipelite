@@ -26,6 +26,9 @@ import pipelite.configuration.ExecutorConfiguration;
 @EqualsAndHashCode(callSuper = true)
 public class SimpleSlurmExecutorParameters extends AbstractSlurmExecutorParameters {
 
+  /** The SLURM account. */
+  private String account;
+
   /** The SLURM queue name. */
   private String queue;
 
@@ -45,6 +48,7 @@ public class SimpleSlurmExecutorParameters extends AbstractSlurmExecutorParamete
       return;
     }
     applyAsyncCmdExecutorDefaults(defaultParams);
+    if (account == null) setAccount(defaultParams.getAccount());
     if (queue == null) setQueue(defaultParams.getQueue());
     if (cpu == null) setCpu(defaultParams.getCpu());
     if (memory == null) setMemory(defaultParams.getMemory());
