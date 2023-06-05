@@ -31,8 +31,14 @@ public class LsfExecutorPollJobsTest {
 
     assertThat(extractLostJobResult(requests, "Job <345654> is not found.").result.isLostError())
         .isTrue();
+    assertThat(extractLostJobResult(requests, "Job <345654> is not found.").request.jobId())
+          .isEqualTo("345654");
+
     assertThat(extractLostJobResult(requests, "Job <345654> is not found").result.isLostError())
         .isTrue();
+    assertThat(extractLostJobResult(requests, "Job <345654> is not found.").request.jobId())
+            .isEqualTo("345654");
+
     assertThat(extractLostJobResult(requests, "Job <345654> is ")).isNull();
     assertThat(extractLostJobResult(requests, "INVALID")).isNull();
   }
