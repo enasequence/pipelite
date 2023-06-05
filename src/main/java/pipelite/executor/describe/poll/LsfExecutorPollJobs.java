@@ -53,7 +53,7 @@ public class LsfExecutorPollJobs implements PollJobs<LsfExecutorContext, LsfRequ
     // Ignore exit code as bjobs returns 255 if some jobs are not found.
     StageExecutorResult result =
         executorContext.cmdRunner().execute(BJOBS_CMD + String.join(" ", requests.jobIds()));
-    return extractJobResults(requests, result.stdOut());
+    return extractJobResults(requests, result.stageLog() /* both stdout and stderr are needed */);
   }
 
   public static DescribeJobsResults<LsfRequestContext> extractJobResults(
