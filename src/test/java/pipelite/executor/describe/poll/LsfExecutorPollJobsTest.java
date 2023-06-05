@@ -32,12 +32,12 @@ public class LsfExecutorPollJobsTest {
     assertThat(extractLostJobResult(requests, "Job <345654> is not found.").result.isLostError())
         .isTrue();
     assertThat(extractLostJobResult(requests, "Job <345654> is not found.").request.jobId())
-          .isEqualTo("345654");
+        .isEqualTo("345654");
 
     assertThat(extractLostJobResult(requests, "Job <345654> is not found").result.isLostError())
         .isTrue();
     assertThat(extractLostJobResult(requests, "Job <345654> is not found.").request.jobId())
-            .isEqualTo("345654");
+        .isEqualTo("345654");
 
     assertThat(extractLostJobResult(requests, "Job <345654> is ")).isNull();
     assertThat(extractLostJobResult(requests, "INVALID")).isNull();
@@ -180,5 +180,33 @@ public class LsfExecutorPollJobsTest {
     assertThat(lostFirstResult.result.isLostError()).isTrue();
     assertThat(lostFirstResult.result.attribute(StageExecutorResultAttribute.JOB_ID))
         .isEqualTo("6065212");
+  }
+
+  @Test
+  public void testExtractJobResultsLost() {
+    DescribeJobsRequests<LsfRequestContext> requests =
+        new DescribeJobsRequests<>(
+            Arrays.asList(
+                new LsfRequestContext("333", "outFile"), new LsfRequestContext("222", "outFile")));
+
+    DescribeJobsResults<LsfRequestContext> results =
+        extractJobResults(requests, "Job <333> is not found\n" + "Job <222> is not found\n");
+
+    DescribeJobsResult<LsfRequestContext> lostFirstResult = results.lost().findFirst().get();
+    DescribeJobsResult<LsfRequestContext> lostSecondResult =
+        results.lost().skip(1).findFirst().get();
+
+    assertThat(results.foundCount()).isEqualTo(0);
+    assertThat(results.lostCount()).isEqualTo(2);
+
+    assertThat(lostFirstResult.request.jobId()).isEqualTo("333");
+    assertThat(lostFirstResult.result.isLostError()).isTrue();
+    assertThat(lostFirstResult.result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("333");
+
+    assertThat(lostSecondResult.request.jobId()).isEqualTo("222");
+    assertThat(lostSecondResult.result.isLostError()).isTrue();
+    assertThat(lostSecondResult.result.attribute(StageExecutorResultAttribute.JOB_ID))
+        .isEqualTo("222");
   }
 }

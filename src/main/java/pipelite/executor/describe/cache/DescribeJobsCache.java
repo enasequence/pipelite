@@ -22,10 +22,11 @@ import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutor;
 
 public abstract class DescribeJobsCache<
-    RequestContext extends DefaultRequestContext,
-    ExecutorContext extends DefaultExecutorContext<RequestContext>,
-    CacheContext extends DefaultCacheContext,
-    Executor extends StageExecutor> {
+        RequestContext extends DefaultRequestContext,
+        ExecutorContext extends DefaultExecutorContext<RequestContext>,
+        CacheContext extends DefaultCacheContext,
+        Executor extends StageExecutor>
+    implements AutoCloseable {
 
   private final ServiceConfiguration serviceConfiguration;
   private final InternalErrorService internalErrorService;
@@ -61,7 +62,7 @@ public abstract class DescribeJobsCache<
   }
 
   @PreDestroy
-  public void shutdown() {
-    cache.values().forEach(describeJobs -> describeJobs.shutdown());
+  public void close() {
+    cache.values().forEach(describeJobs -> describeJobs.close());
   }
 }

@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.util.Assert;
@@ -39,8 +40,9 @@ import pipelite.time.Time;
  */
 @Flogger
 public class DescribeJobs<
-    RequestContext extends DefaultRequestContext,
-    ExecutorContext extends DefaultExecutorContext<RequestContext>> {
+        RequestContext extends DefaultRequestContext,
+        ExecutorContext extends DefaultExecutorContext<RequestContext>>
+    implements AutoCloseable {
 
   private static final Duration REQUEST_FREQUENCY = Duration.ofSeconds(5);
 
@@ -52,6 +54,8 @@ public class DescribeJobs<
   private final InternalErrorHandler internalErrorHandler;
   private final Map<RequestContext, StageExecutorResult> requests = new ConcurrentHashMap<>();
   private final Thread worker;
+
+  private Consumer<DescribeJobs> retrieveResultsListener;
 
   public DescribeJobs(
       ServiceConfiguration serviceConfiguration,
@@ -97,7 +101,8 @@ public class DescribeJobs<
     worker.start();
   }
 
-  public void shutdown() {
+  @Override
+  public void close() {
     worker.interrupt();
   }
 
@@ -110,36 +115,42 @@ public class DescribeJobs<
    * in batches to increase performance. This is called job polling. If the job result can't be
    * retrieved then there is an attempt to recover the job result. This is called job recovery.
    */
-  public void retrieveResults() {
+  private void retrieveResults() {
     // Unexpected exceptions are logged as internal errors but otherwise ignored to
     // keep describe jobs alive.
     internalErrorHandler.execute(
         () -> {
-          List<RequestContext> activeRequests = getActiveRequests();
+          try {
+            List<RequestContext> activeRequests = getActiveRequests();
 
-          log.atInfo().log(
-              "Polling "
-                  + activeRequests.size()
-                  + " active "
-                  + executorContext.executorName()
-                  + " jobs");
+            log.atInfo().log(
+                "Polling "
+                    + activeRequests.size()
+                    + " active "
+                    + executorContext.executorName()
+                    + " jobs");
 
-          while (!activeRequests.isEmpty()) {
-            int toIndex =
-                requestBatchSize == null
-                    ? activeRequests.size()
-                    : Math.min(requestBatchSize, activeRequests.size());
-            final List<RequestContext> requests = activeRequests.subList(0, toIndex);
-            List<DescribeJobsResult<RequestContext>> results =
-                retrieveResults(requests, executorContext);
-            // Set results for completed requests.
-            results.stream()
-                .filter(r -> r != null && r.result.isCompleted())
-                .forEach(e -> this.requests.put(e.request, e.result));
-            if (toIndex == activeRequests.size()) {
-              return;
+            while (!activeRequests.isEmpty()) {
+              int toIndex =
+                  requestBatchSize == null
+                      ? activeRequests.size()
+                      : Math.min(requestBatchSize, activeRequests.size());
+              final List<RequestContext> requests = activeRequests.subList(0, toIndex);
+              List<DescribeJobsResult<RequestContext>> results =
+                  retrieveResults(requests, executorContext);
+              // Set results for completed requests.
+              results.stream()
+                  .filter(r -> r != null && r.result.isCompleted())
+                  .forEach(e -> this.requests.put(e.request, e.result));
+              if (toIndex == activeRequests.size()) {
+                return;
+              }
+              activeRequests = activeRequests.subList(toIndex, activeRequests.size());
             }
-            activeRequests = activeRequests.subList(toIndex, activeRequests.size());
+          } finally {
+            if (retrieveResultsListener != null) {
+              retrieveResultsListener.accept(this);
+            }
           }
         });
   }
@@ -309,5 +320,9 @@ public class DescribeJobs<
 
   public ExecutorContext getExecutorContext() {
     return executorContext;
+  }
+
+  public void setRetrieveResultsListener(Consumer<DescribeJobs> retrieveResultsListener) {
+    this.retrieveResultsListener = retrieveResultsListener;
   }
 }

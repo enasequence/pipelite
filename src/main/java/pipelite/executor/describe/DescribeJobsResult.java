@@ -101,6 +101,12 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       return this;
     }
 
+    public Builder<RequestContext> result(StageExecutorResult result) {
+      this.result = result;
+      this.exitCode = null;
+      return this;
+    }
+
     public Builder<RequestContext> active() {
       this.result = StageExecutorResult.active();
       this.exitCode = null;
