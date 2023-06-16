@@ -14,7 +14,6 @@ import com.google.common.flogger.FluentLogger;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import lombok.extern.flogger.Flogger;
@@ -32,26 +31,23 @@ import pipelite.log.LogKey;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.process.Process;
 import pipelite.process.ProcessFactory;
+import pipelite.process.ProcessState;
+import pipelite.runner.process.ProcessRunner;
 import pipelite.runner.process.ProcessRunnerFactory;
 import pipelite.runner.process.ProcessRunnerPool;
 import pipelite.runner.stage.StageRunner;
-import pipelite.service.DataSourceHealthCheckService;
 import pipelite.service.PipeliteServices;
-import pipelite.service.ProcessService;
-import pipelite.service.ScheduleService;
 
 /** Executes non-parallel processes using cron expressions. */
 @Flogger
 public class ScheduleRunner extends ProcessRunnerPool {
 
-  private final ScheduleService scheduleService;
-  private final ProcessService processService;
-  private final DataSourceHealthCheckService healthCheckService;
+  private final PipeliteServices pipeliteServices;
   private final ScheduleCache scheduleCache;
   private final List<ScheduleCron> scheduleCrons = Collections.synchronizedList(new ArrayList<>());
-  private final Map<String, AtomicLong> maximumExecutions = new ConcurrentHashMap<>();
   private final String serviceName;
   private final InternalErrorHandler internalErrorHandler;
+  private final Map<String, Long> idleExecutions = new ConcurrentHashMap<>();
 
   public ScheduleRunner(
       PipeliteConfiguration pipeliteConfiguration,
@@ -67,9 +63,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
         processRunnerFactory);
     Assert.notNull(pipeliteConfiguration, "Missing configuration");
     Assert.notNull(pipeliteServices, "Missing services");
-    this.scheduleService = pipeliteServices.schedule();
-    this.processService = pipeliteServices.process();
-    this.healthCheckService = pipeliteServices.healthCheck();
+    this.pipeliteServices = pipeliteServices;
     this.scheduleCache = new ScheduleCache(pipeliteServices.registeredPipeline());
     this.serviceName = pipeliteConfiguration.service().getName();
     this.internalErrorHandler =
@@ -86,7 +80,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
   }
 
   private void runScheduleRunner() {
-    if (!healthCheckService.isHealthy()) {
+    if (!pipeliteServices.healthCheck().isHealthy()) {
       logContext(log.atSevere())
           .log("Waiting data source to be healthy before starting new schedules");
       return;
@@ -109,9 +103,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
   @Override
   public boolean isIdle() {
-    return !(maximumExecutions.isEmpty()
-            || maximumExecutions.values().stream().anyMatch(r -> r.get() > 0))
-        && super.isIdle();
+    return super.isIdle() && idleExecutions.values().stream().noneMatch(r -> r > 0);
   }
 
   /** Sets the next schedule execution times. */
@@ -123,7 +115,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
       internalErrorHandler.execute(
           () -> {
             Optional<ScheduleEntity> scheduleEntity =
-                scheduleService.getSavedSchedule(scheduleCron.getPipelineName());
+                pipeliteServices.schedule().getSavedSchedule(scheduleCron.getPipelineName());
             if (!scheduleEntity.isPresent()) {
               throw new PipeliteException("Missing schedule: " + scheduleCron.getPipelineName());
             }
@@ -143,7 +135,7 @@ public class ScheduleRunner extends ProcessRunnerPool {
     if (!scheduleEntity.isActive() && scheduleEntity.getNextTime() == null) {
       logContext(log.atInfo(), scheduleEntity.getPipelineName())
           .log("Scheduling schedule execution");
-      scheduleService.scheduleExecution(scheduleEntity);
+      pipeliteServices.schedule().scheduleExecution(scheduleEntity);
     }
     scheduleCron.setNextTime(scheduleEntity.getNextTime());
   }
@@ -159,7 +151,8 @@ public class ScheduleRunner extends ProcessRunnerPool {
   /** Resumes schedule execution. */
   protected void resumeExecution(ScheduleCron scheduleCron) {
     String pipelineName = scheduleCron.getPipelineName();
-    Optional<ScheduleEntity> scheduleEntity = scheduleService.getSavedSchedule(pipelineName);
+    Optional<ScheduleEntity> scheduleEntity =
+        pipeliteServices.schedule().getSavedSchedule(pipelineName);
     if (!scheduleEntity.isPresent()) {
       throw new PipeliteException("Missing schedule: " + scheduleCron.getPipelineName());
     }
@@ -201,8 +194,9 @@ public class ScheduleRunner extends ProcessRunnerPool {
   }
 
   private Optional<ProcessEntity> getSavedProcess(ScheduleEntity scheduleEntity) {
-    return processService.getSavedProcess(
-        scheduleEntity.getPipelineName(), scheduleEntity.getProcessId());
+    return pipeliteServices
+        .process()
+        .getSavedProcess(scheduleEntity.getPipelineName(), scheduleEntity.getProcessId());
   }
 
   /**
@@ -240,7 +234,8 @@ public class ScheduleRunner extends ProcessRunnerPool {
     }
 
     AtomicReference<ScheduleEntity> scheduleEntity =
-        new AtomicReference<>(scheduleService.getSavedSchedule(pipelineName).orElse(null));
+        new AtomicReference<>(
+            pipeliteServices.schedule().getSavedSchedule(pipelineName).orElse(null));
     if (executeMode == ExecuteMode.NEW) {
       scheduleEntity.set(executeNewSchedule(scheduleEntity.get()));
     }
@@ -251,18 +246,28 @@ public class ScheduleRunner extends ProcessRunnerPool {
     AtomicReference<ProcessEntity> processEntity =
         new AtomicReference<>(getSavedProcess(scheduleEntity.get()).orElse(null));
     if (processEntity.get() == null) {
-      // Create process for the schedule execution.
+      // Create process entity for the schedule execution.
       processEntity.set(
-          processService.createExecution(
-              pipelineName, scheduleEntity.get().getProcessId(), ProcessEntity.DEFAULT_PRIORITY));
+          pipeliteServices
+              .process()
+              .createExecution(
+                  pipelineName,
+                  scheduleEntity.get().getProcessId(),
+                  ProcessEntity.DEFAULT_PRIORITY));
     }
 
-    Process process = getProcess(processEntity.get(), schedule);
-    if (process == null) {
+    // Create process
+    AtomicReference<Process> process = new AtomicReference<>();
+    internalErrorHandler.execute(
+        () -> process.set(ProcessFactory.create(processEntity.get(), schedule)));
+
+    if (process.get() == null) {
+      endScheduleExecutionProcessCreationFailed(
+          scheduleCron, pipelineName, schedule, scheduleEntity.get(), processEntity.get());
       return;
     }
 
-    setMaximumRetries(process);
+    setMaximumRetries(process.get());
 
     // Remove next time to prevent the schedule from being executed again until it
     // has completed.
@@ -270,23 +275,53 @@ public class ScheduleRunner extends ProcessRunnerPool {
 
     runProcess(
         pipelineName,
-        process,
-        (p) -> {
-          ZonedDateTime nextLaunchTime =
-              CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.get().getStartTime());
-          try {
-            scheduleService.endExecution(processEntity.get(), nextLaunchTime);
-          } finally {
-            scheduleCron.setNextTime(nextLaunchTime);
-            decreaseMaximumExecutions(pipelineName);
-          }
-        });
+        process.get(),
+        (p) ->
+            endScheduleExecution(
+                scheduleCron, pipelineName, scheduleEntity.get(), processEntity.get()));
+  }
+
+  private void endScheduleExecution(
+      ScheduleCron scheduleCron,
+      String pipelineName,
+      ScheduleEntity scheduleEntity,
+      ProcessEntity processEntity) {
+    ZonedDateTime nextLaunchTime =
+        CronUtils.launchTime(scheduleCron.getCron(), scheduleEntity.getStartTime());
+    try {
+      pipeliteServices.schedule().endExecution(processEntity, nextLaunchTime);
+    } finally {
+      scheduleCron.setNextTime(nextLaunchTime);
+      updateIdleExecutions(pipelineName);
+    }
+  }
+
+  private void endScheduleExecutionProcessCreationFailed(
+      ScheduleCron scheduleCron,
+      String pipelineName,
+      Schedule schedule,
+      ScheduleEntity scheduleEntity,
+      ProcessEntity processEntity) {
+    logContext(log.atSevere(), pipelineName)
+        .log("Schedule execution failed because process creation failed");
+
+    AtomicReference<Process> process = new AtomicReference<>();
+
+    // Create process without stages
+    internalErrorHandler.execute(
+        () -> process.set(ProcessFactory.createWithoutStages(processEntity, schedule)));
+
+    if (process.get() != null) {
+      ProcessRunner.startProcessExecution(pipeliteServices, process.get());
+      ProcessRunner.endProcessExecution(pipeliteServices, process.get(), ProcessState.FAILED);
+    }
+    endScheduleExecution(scheduleCron, pipelineName, scheduleEntity, processEntity);
   }
 
   private ScheduleEntity executeNewSchedule(ScheduleEntity scheduleEntity) {
     String pipelineName = scheduleEntity.getPipelineName();
     String nextProcessId = nextProcessId(scheduleEntity.getProcessId());
-    if (processService.getSavedProcess(pipelineName, nextProcessId).isPresent()) {
+    if (pipeliteServices.process().getSavedProcess(pipelineName, nextProcessId).isPresent()) {
       throw new PipeliteException(
           "Failed to execute new "
               + pipelineName
@@ -294,12 +329,12 @@ public class ScheduleRunner extends ProcessRunnerPool {
               + nextProcessId
               + " process already exists.");
     }
-    return scheduleService.startExecution(pipelineName, nextProcessId);
+    return pipeliteServices.schedule().startExecution(pipelineName, nextProcessId);
   }
 
   private ScheduleEntity executeRetrySchedule(ScheduleEntity scheduleEntity) {
     String pipelineName = scheduleEntity.getPipelineName();
-    return scheduleService.startExecution(pipelineName, scheduleEntity.getProcessId());
+    return pipeliteServices.schedule().startExecution(pipelineName, scheduleEntity.getProcessId());
   }
 
   private Schedule getSchedule(String pipelineName) {
@@ -308,10 +343,6 @@ public class ScheduleRunner extends ProcessRunnerPool {
       throw new PipeliteException("Failed to create a schedule for pipeline: " + pipelineName);
     }
     return schedule;
-  }
-
-  private Process getProcess(ProcessEntity processEntity, Schedule schedule) {
-    return ProcessFactory.create(processEntity, schedule);
   }
 
   /**
@@ -352,19 +383,18 @@ public class ScheduleRunner extends ProcessRunnerPool {
         // Must not have exceeded maximum executions (not used in production).
         .filter(
             s ->
-                !maximumExecutions.containsKey(s.getPipelineName())
-                    || maximumExecutions.get(s.getPipelineName()).get() > 0);
+                !idleExecutions.containsKey(s.getPipelineName())
+                    || idleExecutions.get(s.getPipelineName()) > 0);
   }
 
-  private void decreaseMaximumExecutions(String pipelineName) {
-    if (maximumExecutions.containsKey(pipelineName)) {
-      maximumExecutions.get(pipelineName).decrementAndGet();
-    }
+  /** Set the maximum number or executions before the schedule is considered idle. */
+  public void setIdleExecutions(String pipelineName, long maximumExecutions) {
+    idleExecutions.merge(pipelineName, maximumExecutions, (key, value) -> value);
   }
 
-  public void setMaximumExecutions(String pipelineName, long maximumExecutions) {
-    this.maximumExecutions.putIfAbsent(pipelineName, new AtomicLong());
-    this.maximumExecutions.get(pipelineName).set(maximumExecutions);
+  private void updateIdleExecutions(String pipelineName) {
+    idleExecutions.computeIfPresent(
+        pipelineName, (key, remainingExecutions) -> remainingExecutions - 1);
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {

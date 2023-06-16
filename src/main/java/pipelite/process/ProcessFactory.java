@@ -22,16 +22,15 @@ public class ProcessFactory {
   private ProcessFactory() {}
 
   /**
-   * Creates a process.
+   * Validates the process before it is configured.
    *
-   * @param processId the process id
+   * @param processEntity the process entity
    * @param registeredPipeline the registered pipeline
-   * @return the process
-   * @throws PipeliteException if the new process could not be created
    */
-  public static Process create(String processId, RegisteredPipeline registeredPipeline) {
-    if (processId == null) {
-      throw new PipeliteException("Failed to create process. Missing process id.");
+  private static void validateBeforeConfigure(
+      ProcessEntity processEntity, RegisteredPipeline registeredPipeline) {
+    if (processEntity == null) {
+      throw new PipeliteException("Failed to create process. Missing process entity.");
     }
 
     if (registeredPipeline == null) {
@@ -39,77 +38,68 @@ public class ProcessFactory {
     }
 
     String pipelineName = registeredPipeline.pipelineName();
-
     if (pipelineName == null) {
       throw new PipeliteException("Failed to create process. Missing pipeline name.");
     }
 
-    try {
-      log.atFine().log("Creating %s process %s", pipelineName, processId);
-
-      ProcessBuilder processBuilder = new ProcessBuilder(processId);
-      registeredPipeline.configureProcess(processBuilder);
-      Process process = processBuilder.build();
-      if (process == null) {
-        throw new PipeliteException(
-            "Failed to create "
-                + pipelineName
-                + " process "
-                + processId
-                + ". Pipeline returned a null process.");
-      }
-      return process;
-    } catch (PipeliteException ex) {
-      throw ex;
-    } catch (Exception ex) {
-      throw new PipeliteException(
-          "Failed to create " + pipelineName + " process " + processId + ". Unexpected exception.",
-          ex);
-    }
-  }
-
-  /**
-   * Creates a process.
-   *
-   * @param processEntity the process entity
-   * @param registeredPipeline the registered pipeline
-   * @return the process
-   * @throws PipeliteException if the new process could not be created
-   */
-  public static Process create(ProcessEntity processEntity, RegisteredPipeline registeredPipeline) {
-    if (processEntity == null) {
-      throw new PipeliteException("Failed to create process. Missing process entity.");
-    }
-
     String processId = processEntity.getProcessId();
-
     if (processId == null) {
       throw new PipeliteException("Failed to create process. Missing process id.");
     }
 
-    if (registeredPipeline == null) {
-      throw new PipeliteException(
-          "Failed to create process " + processId + ". Missing registered pipeline.");
-    }
-
-    String pipelineName = registeredPipeline.pipelineName();
-
-    if (pipelineName == null) {
-      throw new PipeliteException(
-          "Failed to create process " + processId + ". Missing pipeline name.");
-    }
-
-    if (!registeredPipeline.pipelineName().equals(processEntity.getPipelineName())) {
+    if (!pipelineName.equals(processEntity.getPipelineName())) {
       throw new PipeliteException(
           "Failed to create "
               + pipelineName
               + " process "
               + processId
-              + ". Conflicting pipeline from process: "
+              + ". Conflicting pipeline name in process: "
               + processEntity.getPipelineName());
     }
+  }
 
-    Process process = create(processId, registeredPipeline);
+  /**
+   * Creates a process with stages and assigns the process entity to it.
+   *
+   * @param processEntity the process entity
+   * @param registeredPipeline the registered pipeline
+   * @return the created process
+   * @throws PipeliteException if the new process could not be created
+   */
+  public static Process create(ProcessEntity processEntity, RegisteredPipeline registeredPipeline) {
+    validateBeforeConfigure(processEntity, registeredPipeline);
+
+    String processId = processEntity.getProcessId();
+    ProcessBuilder processBuilder = new ProcessBuilder(processId);
+
+    // Create process with stages.
+    registeredPipeline.configureProcess(processBuilder);
+    Process process = processBuilder.build();
+
+    // Set process entity.
+    process.setProcessEntity(processEntity);
+    return process;
+  }
+
+  /**
+   * Creates a process without stages and assigns the process entity to it.
+   *
+   * @param processEntity the process entity
+   * @param registeredPipeline the registered pipeline
+   * @return the created process
+   * @throws PipeliteException if the new process could not be created
+   */
+  public static Process createWithoutStages(
+      ProcessEntity processEntity, RegisteredPipeline registeredPipeline) {
+    validateBeforeConfigure(processEntity, registeredPipeline);
+
+    String processId = processEntity.getProcessId();
+    ProcessBuilder processBuilder = new ProcessBuilder(processId);
+
+    // Create process without stages.
+    Process process = processBuilder.buildWithoutStages();
+
+    // Set process entity.
     process.setProcessEntity(processEntity);
     return process;
   }

@@ -293,7 +293,7 @@ public class ScheduleRunnerTest {
 
       ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
       for (TestSchedule f : testSchedules) {
-        scheduleRunner.setMaximumExecutions(f.pipelineName(), f.processCnt);
+        scheduleRunner.setIdleExecutions(f.pipelineName(), f.processCnt);
       }
 
       processRunnerPoolManager.startPools();

@@ -64,7 +64,7 @@ public class TestTypeScheduleRunner {
 
       ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
       for (ConfigurableTestSchedule<T> f : testSchedules) {
-        scheduleRunner.setMaximumExecutions(f.pipelineName(), processCnt);
+        scheduleRunner.setIdleExecutions(f.pipelineName(), processCnt);
       }
 
       processRunnerPoolManager.startPools();

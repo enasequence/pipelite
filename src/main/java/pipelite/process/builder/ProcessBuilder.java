@@ -56,8 +56,12 @@ public class ProcessBuilder {
     return new StageBuilder(this, stageName, Arrays.asList(firstAddedStage().stage.getStageName()));
   }
 
+  /**
+   * Build the process with stages.
+   *
+   * @return the process
+   */
   public Process build() {
-    // Build the graph
 
     if (addedStages.isEmpty()) {
       throw new PipeliteProcessStagesException("Process has no stages");
@@ -97,6 +101,15 @@ public class ProcessBuilder {
     }
 
     return new Process(processId, stageGraph);
+  }
+
+  /**
+   * Build the process without stages.
+   *
+   * @return the process
+   */
+  public Process buildWithoutStages() {
+    return new Process(processId, ProcessBuilderHelper.stageGraph(Collections.emptyList()));
   }
 
   private ProcessBuilderHelper.AddedStage lastAddedStage() {

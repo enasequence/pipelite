@@ -93,7 +93,7 @@ public class ProcessRunnerPoolManagerTest {
     assertThat(runnerService.getPipelineRunners().size()).isEqualTo(1);
 
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-    scheduleRunner.setMaximumExecutions(testSchedule.pipelineName(), PROCESS_CNT);
+    scheduleRunner.setIdleExecutions(testSchedule.pipelineName(), PROCESS_CNT);
 
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();

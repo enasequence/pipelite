@@ -92,12 +92,11 @@ public class ProcessRunner {
         new InternalErrorHandler(
             pipeliteServices.internalError(), serviceName, pipelineName, processId, this);
     if (lockProcess) {
-      lockProcess(pipelineName);
+      lockProcess();
     }
   }
 
-  protected void lockProcess(String pipelineName) {
-    // Lock process.
+  protected void lockProcess() {
     if (!pipeliteServices.locker().lockProcess(pipelineName, processId)) {
       throw new PipeliteProcessLockedException(pipelineName, processId);
     }
@@ -147,7 +146,8 @@ public class ProcessRunner {
       if (!active.isEmpty()) {
         runStageRunners();
       } else {
-        endProcessExecution();
+        endProcessExecution(pipeliteServices, process, evaluateProcessState(process));
+        unlockProcess();
         processRunnerState = ProcessRunnerState.COMPLETED;
       }
     }
@@ -167,7 +167,7 @@ public class ProcessRunner {
       String pipelineName,
       Process process) {
     prepareStagesExecution(pipeliteServices, executorConfiguration, pipelineName, process);
-    pipeliteServices.process().startExecution(process.getProcessEntity());
+    startProcessExecution(pipeliteServices, process);
   }
 
   private void runStageRunners() {
@@ -180,14 +180,22 @@ public class ProcessRunner {
     active.stream().forEach(a -> runOneIterationForStageRunner(a));
   }
 
-  private void endProcessExecution() {
-    ProcessState processState = evaluateProcessState(process);
-    logContext(log.atInfo()).log("Process execution finished with state " + processState.name());
+  public static void startProcessExecution(PipeliteServices pipeliteServices, Process process) {
+    pipeliteServices.process().startExecution(process.getProcessEntity());
+  }
+
+  public static void endProcessExecution(
+      PipeliteServices pipeliteServices, Process process, ProcessState processState) {
+    String pipelineName = process.getProcessEntity().getPipelineName();
+    String processId = process.getProcessId();
+
+    logContext(log.atInfo(), pipelineName, processId)
+        .log("Process execution finished with state " + processState.name());
 
     pipeliteServices.process().endExecution(process, processState);
-    unlockProcess();
 
-    pipeliteMetrics
+    pipeliteServices
+        .metrics()
         .process(pipelineName)
         .endProcessExecution(process.getProcessEntity().getProcessState());
   }
@@ -316,6 +324,11 @@ public class ProcessRunner {
   }
 
   private FluentLogger.Api logContext(FluentLogger.Api log) {
+    return logContext(log, pipelineName, processId);
+  }
+
+  private static FluentLogger.Api logContext(
+      FluentLogger.Api log, String pipelineName, String processId) {
     return log.with(LogKey.PIPELINE_NAME, pipelineName).with(LogKey.PROCESS_ID, processId);
   }
 }

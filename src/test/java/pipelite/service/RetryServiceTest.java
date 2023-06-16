@@ -136,14 +136,17 @@ class RetryServiceTest {
   @Test
   public void retryFailedProcess() {
     String processId = PipeliteTestIdCreator.processId();
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName(PIPELINE_NAME);
+    processEntity.setProcessId(processId);
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
-    Process process = ProcessFactory.create(processId, registeredPipeline);
+    Process process = ProcessFactory.create(processEntity, registeredPipeline);
 
     // Failed process
     process.setProcessEntity(processService.createExecution(PIPELINE_NAME, processId, 1));
     processService.startExecution(process.getProcessEntity());
-    ProcessEntity processEntity = processService.endExecution(process, ProcessState.FAILED);
+    processEntity = processService.endExecution(process, ProcessState.FAILED);
 
     // Failed stage
     Stage stage = process.getStage(STAGE_NAME).get();
@@ -179,9 +182,12 @@ class RetryServiceTest {
   @Test
   public void retryFailedProcessThrowsBecauseNotFailed() {
     String processId = PipeliteTestIdCreator.processId();
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName(PIPELINE_NAME);
+    processEntity.setProcessId(processId);
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
-    Process process = ProcessFactory.create(processId, registeredPipeline);
+    Process process = ProcessFactory.create(processEntity, registeredPipeline);
 
     // Save completed process
     process.setProcessEntity(processService.createExecution(PIPELINE_NAME, processId, 1));
@@ -189,7 +195,7 @@ class RetryServiceTest {
     processService.endExecution(process, ProcessState.COMPLETED);
 
     // Check completed process
-    ProcessEntity processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
+    processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.COMPLETED);
 
     // Retry
@@ -203,9 +209,12 @@ class RetryServiceTest {
   @Test
   public void retryFailedProcessThrowsUnknownStage() {
     String processId = PipeliteTestIdCreator.processId();
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName(PIPELINE_NAME);
+    processEntity.setProcessId(processId);
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
-    Process process = ProcessFactory.create(processId, registeredPipeline);
+    Process process = ProcessFactory.create(processEntity, registeredPipeline);
 
     // Save completed process
     process.setProcessEntity(processService.createExecution(PIPELINE_NAME, processId, 1));
@@ -213,7 +222,7 @@ class RetryServiceTest {
     processService.endExecution(process, ProcessState.FAILED);
 
     // Check completed process
-    ProcessEntity processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
+    processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
 
     // Retry
@@ -227,9 +236,12 @@ class RetryServiceTest {
   @Test
   public void retryFailedProcessNoPermanentlyFailedStages() {
     String processId = PipeliteTestIdCreator.processId();
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName(PIPELINE_NAME);
+    processEntity.setProcessId(processId);
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(PIPELINE_NAME);
-    Process process = ProcessFactory.create(processId, registeredPipeline);
+    Process process = ProcessFactory.create(processEntity, registeredPipeline);
 
     // Save failed process
     process.setProcessEntity(processService.createExecution(PIPELINE_NAME, processId, 1));
@@ -237,7 +249,7 @@ class RetryServiceTest {
     processService.endExecution(process, ProcessState.FAILED);
 
     // Check failed process
-    ProcessEntity processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
+    processEntity = processService.getSavedProcess(PIPELINE_NAME, processId).get();
     assertThat(processEntity.getProcessState()).isEqualTo(ProcessState.FAILED);
 
     // Save completed stage
@@ -271,14 +283,17 @@ class RetryServiceTest {
   public void retryFailedSchedule() {
     String serviceName = PipeliteTestIdCreator.serviceName();
     String processId = PipeliteTestIdCreator.processId();
+    ProcessEntity processEntity = new ProcessEntity();
+    processEntity.setPipelineName(SCHEDULE_NAME);
+    processEntity.setProcessId(processId);
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(SCHEDULE_NAME);
-    Process process = ProcessFactory.create(processId, registeredPipeline);
+    Process process = ProcessFactory.create(processEntity, registeredPipeline);
 
     // Failed process
     process.setProcessEntity(processService.createExecution(SCHEDULE_NAME, processId, 1));
     processService.startExecution(process.getProcessEntity());
-    ProcessEntity processEntity = processService.endExecution(process, ProcessState.FAILED);
+    processEntity = processService.endExecution(process, ProcessState.FAILED);
 
     // Failed stage
     Stage stage = process.getStage(STAGE_NAME).get();
@@ -302,7 +317,7 @@ class RetryServiceTest {
     processRunnerPoolManager._createScheduleRunner();
 
     ScheduleRunner scheduleRunner = runnerService.getScheduleRunner();
-    scheduleRunner.setMaximumExecutions(SCHEDULE_NAME, 1);
+    scheduleRunner.setIdleExecutions(SCHEDULE_NAME, 1);
     assertThat(scheduleRunner.getScheduleCrons().size()).isOne();
     assertThat(scheduleRunner.getScheduleCrons().get(0).getPipelineName()).isEqualTo(SCHEDULE_NAME);
 

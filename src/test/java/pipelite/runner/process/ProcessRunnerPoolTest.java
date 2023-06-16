@@ -62,7 +62,7 @@ public class ProcessRunnerPoolTest {
             pipeliteConfiguration, pipeliteServices, metrics, pipelineName, process, lockProcess) {
 
           @Override
-          protected void lockProcess(String pipelineName) {
+          protected void lockProcess() {
             lockProcessCnt.incrementAndGet();
           }
 

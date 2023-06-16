@@ -62,11 +62,15 @@ public class RetryService {
     // Check if there is a schedule that can be retried.
     boolean isRetrySchedule = scheduleService.isRetrySchedule(pipelineName, processId);
 
+    // Get process entity
+    ProcessEntity processEntity = getSavedProcess(pipelineName, processId);
+
     RegisteredPipeline registeredPipeline =
         registeredPipelineService.getRegisteredPipeline(pipelineName);
-    Process process = ProcessFactory.create(processId, registeredPipeline);
 
-    // Retry stages
+    Process process = ProcessFactory.create(processEntity, registeredPipeline);
+
+    // Get stage entities and reset permanently failed stages
     for (Stage stage : process.getStages()) {
       stage.setStageEntity(getSavedStage(pipelineName, processId, stage.getStageName()));
       if (DependencyResolver.isPermanentlyFailedStage(stage)) {
@@ -76,7 +80,6 @@ public class RetryService {
     }
 
     // Retry process
-    process.setProcessEntity(getSavedProcess(pipelineName, processId));
     processService.startExecution(process.getProcessEntity());
 
     // Retry schedule

@@ -117,8 +117,8 @@ public class ScheduleRunnerResumeTest {
                 pipeliteMetrics,
                 pipeliteServices.registeredPipeline().getRegisteredPipelines(Schedule.class)));
 
-    scheduleRunner.setMaximumExecutions(resume1.pipelineName(), maxExecution1);
-    scheduleRunner.setMaximumExecutions(resume2.pipelineName(), maxExecution2);
+    scheduleRunner.setIdleExecutions(resume1.pipelineName(), maxExecution1);
+    scheduleRunner.setIdleExecutions(resume2.pipelineName(), maxExecution2);
 
     // Resume the two processes, check that they are immediately executed
     // and that they are scheduled for a later execution.
