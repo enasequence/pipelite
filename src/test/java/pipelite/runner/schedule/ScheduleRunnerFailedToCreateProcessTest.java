@@ -13,7 +13,6 @@ package pipelite.runner.schedule;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import lombok.Getter;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,6 +36,10 @@ import pipelite.stage.executor.StageExecutorState;
 import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestSchedule;
 
+/**
+ * If process configuration fails for a schedule then the process execution will fail. No stages
+ * will be created for the process.
+ */
 @SpringBootTest(
     classes = PipeliteTestConfigWithManager.class,
     properties = {
@@ -78,7 +81,6 @@ public class ScheduleRunnerFailedToCreateProcessTest {
     }
   }
 
-  @Getter
   protected static class MissingStageTestSchedule
       extends ConfigurableTestSchedule<MissingStageTestProcessConfiguration> {
 

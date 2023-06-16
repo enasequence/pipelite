@@ -74,7 +74,7 @@ public class ProcessRunnerPoolManager {
     serviceManager = null;
   }
 
-  public synchronized void createPools() {
+  public synchronized List<ProcessRunnerPool> createPools() {
     log.atInfo().log("Creating process runner pools");
 
     try {
@@ -84,6 +84,8 @@ public class ProcessRunnerPoolManager {
       log.atInfo().log("Created process runner pools");
 
       _createServiceManager();
+
+      return pools;
     } catch (Exception ex) {
       log.atSevere().withCause(ex).log("Unexpected exception when creating process runner pools");
       clear();
