@@ -24,6 +24,7 @@ import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.test.PipeliteTestIdCreator;
 
@@ -233,24 +234,10 @@ class StageEntityTest {
     TestExecutor executor = new TestExecutor();
     Stage stage = Stage.builder().stageName(stageName).executor(executor).build();
 
-    // Internal error
-    StageEntity stageEntity = initErrorTypeTest(pipelineName, processId, stage);
-    stageEntity.endExecution(StageExecutorResult.internalError(), Collections.emptyList());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
-
-    // Timeout error
-    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
-    stageEntity.endExecution(StageExecutorResult.timeoutError(), Collections.emptyList());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.TIMEOUT_ERROR);
-
-    // Lost error
-    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
-    stageEntity.endExecution(StageExecutorResult.lostError(), Collections.emptyList());
-    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.LOST_ERROR);
-
     // Execution error
-    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
-    stageEntity.endExecution(StageExecutorResult.executionError(), Collections.emptyList());
+    StageEntity stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(
+        StageExecutorResult.create(StageExecutorState.EXECUTION_ERROR), Collections.emptyList());
     assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.EXECUTION_ERROR);
 
     // Permanent error
@@ -259,6 +246,36 @@ class StageEntityTest {
     permanentError.attribute(StageExecutorResultAttribute.EXIT_CODE, "1");
     stageEntity.endExecution(permanentError, List.of(1));
     assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.PERMANENT_ERROR);
+
+    // Timeout error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(
+        StageExecutorResult.create(StageExecutorState.TIMEOUT_ERROR), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.TIMEOUT_ERROR);
+
+    // Memory error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(
+        StageExecutorResult.create(StageExecutorState.MEMORY_ERROR), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.MEMORY_ERROR);
+
+    // Terminated error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(
+        StageExecutorResult.create(StageExecutorState.TERMINATED_ERROR), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.TERMINATED_ERROR);
+
+    // Lost error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(
+        StageExecutorResult.create(StageExecutorState.LOST_ERROR), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.LOST_ERROR);
+
+    // Internal error
+    stageEntity = initErrorTypeTest(pipelineName, processId, stage);
+    stageEntity.endExecution(
+        StageExecutorResult.create(StageExecutorState.INTERNAL_ERROR), Collections.emptyList());
+    assertThat(stageEntity.getErrorType()).isEqualTo(ErrorType.INTERNAL_ERROR);
   }
 
   private static StageEntity initErrorTypeTest(String pipelineName, String processId, Stage stage) {

@@ -22,7 +22,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.configuration.properties.KubernetesTestConfiguration;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.KubernetesExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 import pipelite.test.configuration.PipeliteTestConfigWithServices;
@@ -64,7 +63,7 @@ public class KubernetesExecutorTest {
         result -> {},
         result -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stageLog())
               .startsWith(
                   "\n"
@@ -92,7 +91,7 @@ public class KubernetesExecutorTest {
         result -> {},
         result -> {
           assertThat(result.isSuccess()).isFalse();
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+          assertThat(result.exitCode()).isEqualTo("5");
         });
   }
 }

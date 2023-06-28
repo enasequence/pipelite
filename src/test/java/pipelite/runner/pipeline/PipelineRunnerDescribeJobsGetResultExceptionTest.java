@@ -15,10 +15,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -32,32 +28,23 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import pipelite.configuration.ServiceConfiguration;
-import pipelite.configuration.properties.KubernetesTestConfiguration;
-import pipelite.configuration.properties.LsfTestConfiguration;
 import pipelite.exception.PipeliteException;
-import pipelite.executor.AbstractLsfExecutor;
-import pipelite.executor.KubernetesExecutor;
+import pipelite.executor.AsyncTestExecutor;
 import pipelite.executor.describe.DescribeJobs;
-import pipelite.executor.describe.cache.KubernetesDescribeJobsCache;
-import pipelite.executor.describe.cache.LsfDescribeJobsCache;
-import pipelite.executor.describe.context.executor.KubernetesExecutorContext;
-import pipelite.executor.describe.context.executor.LsfExecutorContext;
-import pipelite.executor.describe.context.request.DefaultRequestContext;
-import pipelite.executor.describe.context.request.LsfRequestContext;
+import pipelite.executor.describe.cache.AsyncTestDescribeJobsCache;
+import pipelite.executor.describe.context.executor.AsyncTestExecutorContext;
+import pipelite.executor.describe.context.request.AsyncTestRequestContext;
 import pipelite.manager.ProcessRunnerPoolManager;
 import pipelite.metrics.PipeliteMetrics;
 import pipelite.metrics.collector.ProcessRunnerMetrics;
 import pipelite.process.builder.ProcessBuilder;
 import pipelite.service.PipeliteServices;
 import pipelite.service.RunnerService;
-import pipelite.stage.parameters.AbstractLsfExecutorParameters;
-import pipelite.stage.parameters.KubernetesExecutorParameters;
-import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.executor.StageExecutorState;
+import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.test.PipeliteTestIdCreator;
 import pipelite.test.configuration.PipeliteTestConfigWithManager;
 import pipelite.tester.pipeline.ConfigurableTestPipeline;
-import pipelite.tester.pipeline.ExecutorTestExitCode;
-import pipelite.tester.pipeline.ExecutorTestParameters;
 import pipelite.tester.process.TestProcessConfiguration;
 
 /**
@@ -80,16 +67,10 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
 
   private static final int PROCESS_CNT = 2;
   private static final int PARALLELISM = 2;
-  private static final String PIPELINE_NAME_SIMPLE_LSF = PipeliteTestIdCreator.pipelineName();
-  private static final String PIPELINE_NAME_KUBERNETES = PipeliteTestIdCreator.pipelineName();
+  private static final String PIPELINE_NAME = PipeliteTestIdCreator.pipelineName();
   private static final String STAGE_NAME = PipeliteTestIdCreator.stageName();
-  private static final int IMMEDIATE_RETRIES = 0;
-  private static final int MAXIMUM_RETRIES = 0;
-  private static final List<Integer> NO_PERMANENT_ERRORS = Collections.emptyList();
-  private static final int SUCCESS_EXIT_CODE = 0;
 
-  @SpyBean LsfDescribeJobsCache lsfDescribeJobsCache;
-  @SpyBean KubernetesDescribeJobsCache kubernetesDescribeJobsCache;
+  @SpyBean AsyncTestDescribeJobsCache asyncTestDescribeJobsCache;
 
   @Autowired ProcessRunnerPoolManager processRunnerPoolManager;
   @Autowired PipeliteServices pipeliteServices;
@@ -100,60 +81,25 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
   @TestConfiguration
   static class TestConfig {
 
-    @Autowired LsfTestConfiguration lsfTestConfiguration;
-
-    @Autowired KubernetesTestConfiguration kubernetesTestConfiguration;
-
     @Bean
-    public SingleStageSimpleLsfPipeline singleStageSimpleLsfPipeline() {
-      return new SingleStageSimpleLsfPipeline(lsfTestConfiguration);
-    }
-
-    @Bean
-    public SingleStageKubernetesPipeline singleStageKubernetesPipeline() {
-      return new SingleStageKubernetesPipeline(kubernetesTestConfiguration);
+    public SingleStageAsyncTestPipeline singleStageAsyncTestPipeline() {
+      return new SingleStageAsyncTestPipeline();
     }
   }
 
-  public static class SingleStageSimpleLsfPipeline
+  public static class SingleStageAsyncTestPipeline
       extends ConfigurableTestPipeline<TestProcessConfiguration> {
-    public SingleStageSimpleLsfPipeline(LsfTestConfiguration lsfTestConfiguration) {
+    public SingleStageAsyncTestPipeline() {
       super(
           PARALLELISM,
           PROCESS_CNT,
-          new TestProcessConfiguration(PIPELINE_NAME_SIMPLE_LSF) {
+          new TestProcessConfiguration(PIPELINE_NAME) {
             @Override
             public void configureProcess(ProcessBuilder builder) {
-              SimpleLsfExecutorParameters params =
-                  ExecutorTestParameters.simpleLsfParams(
-                      lsfTestConfiguration,
-                      IMMEDIATE_RETRIES,
-                      MAXIMUM_RETRIES,
-                      NO_PERMANENT_ERRORS);
-              ExecutorTestExitCode.withSimpleLsfExecutor(
-                  builder.execute(STAGE_NAME), SUCCESS_EXIT_CODE, params);
-            }
-          });
-    }
-  }
-
-  public static class SingleStageKubernetesPipeline
-      extends ConfigurableTestPipeline<TestProcessConfiguration> {
-    public SingleStageKubernetesPipeline(KubernetesTestConfiguration kubernetesTestConfiguration) {
-      super(
-          PARALLELISM,
-          PROCESS_CNT,
-          new TestProcessConfiguration(PIPELINE_NAME_KUBERNETES) {
-            @Override
-            public void configureProcess(ProcessBuilder builder) {
-              KubernetesExecutorParameters params =
-                  ExecutorTestParameters.kubernetesParams(
-                      kubernetesTestConfiguration,
-                      IMMEDIATE_RETRIES,
-                      MAXIMUM_RETRIES,
-                      NO_PERMANENT_ERRORS);
-              ExecutorTestExitCode.withKubernetesExecutor(
-                  builder.execute(STAGE_NAME), SUCCESS_EXIT_CODE, params);
+              ExecutorParameters params = new ExecutorParameters();
+              params.setImmediateRetries(0);
+              params.setMaximumRetries(0);
+              builder.execute(STAGE_NAME).withAsyncTestExecutor(StageExecutorState.SUCCESS, params);
             }
           });
     }
@@ -166,202 +112,72 @@ public class PipelineRunnerDescribeJobsGetResultExceptionTest {
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    List<String> pipelineNames = Arrays.asList(PIPELINE_NAME_SIMPLE_LSF, PIPELINE_NAME_KUBERNETES);
-    for (String pipelineName : pipelineNames) {
-      RunnerService runnerService = pipeliteServices.runner();
-      assertThat(
-              runnerService
-                  .getPipelineRunner(pipelineName)
-                  .get()
-                  .getActiveProcessRunners()
-                  .isEmpty())
-          .isTrue();
+    RunnerService runnerService = pipeliteServices.runner();
+    assertThat(
+            runnerService
+                .getPipelineRunner(PIPELINE_NAME)
+                .get()
+                .getActiveProcessRunners()
+                .isEmpty())
+        .isTrue();
 
-      ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(pipelineName);
-      assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(processRunnerMetrics.failedCount()).isZero();
-      assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
-      assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
-    }
+    ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(PIPELINE_NAME);
+    assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.failedCount()).isZero();
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
   }
 
   // The stage execution is expected to fail if DescribeJobs.getResult() throws an exception.
   @Test
-  public void getDescribeJobsResultThrowsException() {
+  public void exception() {
 
-    AtomicInteger lsfExceptionCount = new AtomicInteger();
-    AtomicInteger kubernetesExceptionCount = new AtomicInteger();
+    AtomicInteger exceptionCount = new AtomicInteger();
 
-    Answer<DescribeJobs<LsfRequestContext, LsfExecutorContext>> createLsfDescribeJobsAnswer =
-        invocation -> {
-          AbstractLsfExecutor<AbstractLsfExecutorParameters> executor =
-              invocation.getArgument(0, AbstractLsfExecutor.class);
-
-          DescribeJobs<LsfRequestContext, LsfExecutorContext> lsfDescribeJobs =
-              spy(
-                  new DescribeJobs<>(
-                      serviceConfiguration,
-                      pipeliteServices.internalError(),
-                      lsfDescribeJobsCache.requestLimit(),
-                      lsfDescribeJobsCache.getExecutorContext(executor)));
-          doAnswer(
-                  invocation2 -> {
-                    lsfExceptionCount.incrementAndGet();
-                    throw new PipeliteException("Expected exception from getResult");
-                  })
-              .when(lsfDescribeJobs)
-              .getResult(any());
-
-          return lsfDescribeJobs;
-        };
-    doAnswer(createLsfDescribeJobsAnswer).when(lsfDescribeJobsCache).createDescribeJobs(any());
-
-    Answer<DescribeJobs<DefaultRequestContext, KubernetesExecutorContext>>
-        createKubernetesDescribeJobsAnswer =
+    Answer<DescribeJobs<AsyncTestRequestContext, AsyncTestExecutorContext>>
+        createDescribeJobsAnswer =
             invocation -> {
-              KubernetesExecutor executor = invocation.getArgument(0, KubernetesExecutor.class);
+              AsyncTestExecutor executor = invocation.getArgument(0, AsyncTestExecutor.class);
 
-              DescribeJobs<DefaultRequestContext, KubernetesExecutorContext> lsfDescribeJobs =
+              DescribeJobs<AsyncTestRequestContext, AsyncTestExecutorContext> describeJobs =
                   spy(
                       new DescribeJobs<>(
                           serviceConfiguration,
                           pipeliteServices.internalError(),
-                          kubernetesDescribeJobsCache.requestLimit(),
-                          kubernetesDescribeJobsCache.getExecutorContext(executor)));
+                          asyncTestDescribeJobsCache.requestLimit(),
+                          asyncTestDescribeJobsCache.getExecutorContext(executor)));
               doAnswer(
                       invocation2 -> {
-                        kubernetesExceptionCount.incrementAndGet();
+                        exceptionCount.incrementAndGet();
                         throw new PipeliteException("Expected exception from getResult");
                       })
-                  .when(lsfDescribeJobs)
+                  .when(describeJobs)
                   .getResult(any());
 
-              return lsfDescribeJobs;
+              return describeJobs;
             };
-    doAnswer(createKubernetesDescribeJobsAnswer)
-        .when(kubernetesDescribeJobsCache)
-        .createDescribeJobs(any());
+    doAnswer(createDescribeJobsAnswer).when(asyncTestDescribeJobsCache).createDescribeJobs(any());
 
     processRunnerPoolManager.createPools();
     processRunnerPoolManager.startPools();
     processRunnerPoolManager.waitPoolsToStop();
 
-    assertThat(lsfExceptionCount.get()).isEqualTo(PROCESS_CNT);
-    assertThat(kubernetesExceptionCount.get()).isEqualTo(PROCESS_CNT);
+    assertThat(exceptionCount.get()).isEqualTo(PROCESS_CNT);
 
-    List<String> pipelineNames = Arrays.asList(PIPELINE_NAME_SIMPLE_LSF, PIPELINE_NAME_KUBERNETES);
-    for (String pipelineName : pipelineNames) {
-      RunnerService runnerService = pipeliteServices.runner();
-      assertThat(
-              runnerService
-                  .getPipelineRunner(pipelineName)
-                  .get()
-                  .getActiveProcessRunners()
-                  .isEmpty())
-          .isTrue();
+    RunnerService runnerService = pipeliteServices.runner();
+    assertThat(
+            runnerService
+                .getPipelineRunner(PIPELINE_NAME)
+                .get()
+                .getActiveProcessRunners()
+                .isEmpty())
+        .isTrue();
 
-      ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(pipelineName);
-      assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(processRunnerMetrics.completedCount()).isZero();
-      assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
-      assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipeliteMetrics.error().count()).isEqualTo(PROCESS_CNT * pipelineNames.size());
-    }
-  }
-
-  // The stage execution is expected to continue if an exception is thrown
-  // in DescribeJobs.retrieveResults(). In this test we will throw the
-  // exception from ExecutorContext.pollJobs().
-  @Test
-  public void getDescribeJobsRetrieveResultsThrowsException() {
-
-    AtomicInteger lsfExceptionCount = new AtomicInteger();
-    AtomicInteger kubernetesExceptionCount = new AtomicInteger();
-
-    Answer<DescribeJobs<LsfRequestContext, LsfExecutorContext>> createLsfDescribeJobsAnswer =
-        invocation -> {
-          AbstractLsfExecutor<AbstractLsfExecutorParameters> executor =
-              invocation.getArgument(0, AbstractLsfExecutor.class);
-
-          AtomicBoolean throwException = new AtomicBoolean(true);
-          LsfExecutorContext executorContext =
-              spy(lsfDescribeJobsCache.getExecutorContext(executor));
-          doAnswer(
-                  invocation2 -> {
-                    if (throwException.get()) {
-                      throwException.set(false);
-                      lsfExceptionCount.incrementAndGet();
-                      // Throw exception once.
-                      throw new PipeliteException("Expected exception from pollJobs");
-                    }
-                    return invocation2.callRealMethod();
-                  })
-              .when(executorContext)
-              .pollJobs(any());
-          return spy(
-              new DescribeJobs<>(
-                  serviceConfiguration,
-                  pipeliteServices.internalError(),
-                  lsfDescribeJobsCache.requestLimit(),
-                  executorContext));
-        };
-    doAnswer(createLsfDescribeJobsAnswer).when(lsfDescribeJobsCache).createDescribeJobs(any());
-
-    Answer<DescribeJobs<DefaultRequestContext, KubernetesExecutorContext>>
-        createKubernetesDescribeJobsAnswer =
-            invocation -> {
-              KubernetesExecutor executor = invocation.getArgument(0, KubernetesExecutor.class);
-
-              AtomicBoolean throwException = new AtomicBoolean(true);
-              KubernetesExecutorContext executorContext =
-                  spy(kubernetesDescribeJobsCache.getExecutorContext(executor));
-              doAnswer(
-                      invocation2 -> {
-                        if (throwException.get()) {
-                          throwException.set(false);
-                          kubernetesExceptionCount.incrementAndGet();
-                          // Throw exception once.
-                          throw new PipeliteException("Expected exception from pollJobs");
-                        }
-                        return invocation2.callRealMethod();
-                      })
-                  .when(executorContext)
-                  .pollJobs(any());
-              return spy(
-                  new DescribeJobs<>(
-                      serviceConfiguration,
-                      pipeliteServices.internalError(),
-                      kubernetesDescribeJobsCache.requestLimit(),
-                      executorContext));
-            };
-    doAnswer(createKubernetesDescribeJobsAnswer)
-        .when(kubernetesDescribeJobsCache)
-        .createDescribeJobs(any());
-
-    processRunnerPoolManager.createPools();
-    processRunnerPoolManager.startPools();
-    processRunnerPoolManager.waitPoolsToStop();
-
-    assertThat(lsfExceptionCount.get()).isEqualTo(1);
-    assertThat(kubernetesExceptionCount.get()).isEqualTo(1);
-
-    List<String> pipelineNames = Arrays.asList(PIPELINE_NAME_SIMPLE_LSF, PIPELINE_NAME_KUBERNETES);
-    for (String pipelineName : pipelineNames) {
-      RunnerService runnerService = pipeliteServices.runner();
-      assertThat(
-              runnerService
-                  .getPipelineRunner(pipelineName)
-                  .get()
-                  .getActiveProcessRunners()
-                  .isEmpty())
-          .isTrue();
-
-      ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(pipelineName);
-      assertThat(processRunnerMetrics.completedCount()).isEqualTo(PROCESS_CNT);
-      assertThat(processRunnerMetrics.failedCount()).isZero();
-      assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(0);
-      assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(PROCESS_CNT);
-      assertThat(pipeliteMetrics.error().count()).isEqualTo(PROCESS_CNT);
-    }
+    ProcessRunnerMetrics processRunnerMetrics = pipeliteMetrics.process(PIPELINE_NAME);
+    assertThat(processRunnerMetrics.failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(processRunnerMetrics.completedCount()).isZero();
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).successCount()).isEqualTo(0);
+    assertThat(processRunnerMetrics.stage(STAGE_NAME).failedCount()).isEqualTo(PROCESS_CNT);
+    assertThat(pipeliteMetrics.error().count()).isEqualTo(PROCESS_CNT);
   }
 }

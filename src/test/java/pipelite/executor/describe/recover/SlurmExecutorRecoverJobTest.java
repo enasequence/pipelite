@@ -79,7 +79,7 @@ public class SlurmExecutorRecoverJobTest {
     String jobId = result.attribute(StageExecutorResultAttribute.JOB_ID);
 
     assertThat(result.isSuccess()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.exitCode()).isEqualTo("0");
     assertThat(jobId).isNotNull();
 
     SlurmRequestContext requestContext = new SlurmRequestContext(jobId, executor.getOutFile());
@@ -91,8 +91,7 @@ public class SlurmExecutorRecoverJobTest {
 
     assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
     assertThat(describeJobsResult.result.isSuccess()).isTrue();
-    assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isEqualTo("0");
+    assertThat(describeJobsResult.result.exitCode()).isEqualTo("0");
   }
 
   @Test
@@ -103,7 +102,7 @@ public class SlurmExecutorRecoverJobTest {
     String jobId = result.attribute(StageExecutorResultAttribute.JOB_ID);
 
     assertThat(result.isExecutionError()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("1");
+    assertThat(result.exitCode()).isEqualTo("1");
     assertThat(jobId).isNotNull();
 
     SlurmRequestContext requestContext = new SlurmRequestContext(jobId, executor.getOutFile());
@@ -115,8 +114,7 @@ public class SlurmExecutorRecoverJobTest {
 
     assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
     assertThat(describeJobsResult.result.isExecutionError()).isTrue();
-    assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isEqualTo("1");
+    assertThat(describeJobsResult.result.exitCode()).isEqualTo("1");
   }
 
   @Test

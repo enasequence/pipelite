@@ -20,6 +20,7 @@ import pipelite.configuration.properties.SlurmTestConfiguration;
 import pipelite.service.PipeliteServices;
 import pipelite.stage.executor.StageExecutor;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 import pipelite.test.configuration.PipeliteTestConfigWithServices;
@@ -75,13 +76,16 @@ public class SshSimpleSlurmExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains("echo test >");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.exitCode()).isEqualTo("0");
+          assertThat(result.state()).isEqualTo(StageExecutorState.SUCCESS);
+          assertThat(result.attribute(StageExecutorResultAttribute.SLURM_STATE))
+              .isEqualTo("COMPLETED");
           assertThat(result.stdOut()).contains("test\n");
           assertThat(result.stageLog()).contains("test\n");
         });
@@ -126,13 +130,70 @@ public class SshSimpleSlurmExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("mkdir -p");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("exit 5 >");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");
         },
         result -> {
           assertThat(result.isSuccess()).isFalse();
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+          assertThat(result.exitCode()).isEqualTo("5");
+          assertThat(result.state()).isEqualTo(StageExecutorState.EXECUTION_ERROR);
+          assertThat(result.attribute(StageExecutorResultAttribute.SLURM_STATE))
+              .isEqualTo("FAILED");
+        });
+  }
+
+  @Test
+  public void testExecuteOutOfMemoryError() {
+    SimpleSlurmExecutor executor =
+        StageExecutor.createSimpleSlurmExecutor("dd bs=50M if=/dev/zero of=/dev/null");
+    executor.setExecutorParams(
+        SimpleSlurmExecutorParameters.builder()
+            .host(slurmTestConfiguration.getHost())
+            .user(slurmTestConfiguration.getUser())
+            .logDir(slurmTestConfiguration.getLogDir())
+            .queue(slurmTestConfiguration.getQueue())
+            .memory(1)
+            .cpu(1)
+            .timeout(Duration.ofSeconds(30))
+            .logSave(LogFileSavePolicy.ALWAYS)
+            .logTimeout(Duration.ofSeconds(60))
+            .build());
+
+    AsyncExecutorTestHelper.testExecute(
+        executor,
+        pipeliteServices,
+        result -> {
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .startsWith("sbatch << EOF");
+
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("#SBATCH --job-name=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("#SBATCH --output=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("#SBATCH -n 1");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("#SBATCH --mem=\"1\"");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("#SBATCH -t 1");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("#SBATCH -p standard");
+
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("mkdir -p");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
+              .contains("dd bs=50M if=/dev/zero of=/dev/null >");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
+          assertThat(result.exitCode()).isEqualTo("0");
+          assertThat(result.stdOut()).contains("Submitted batch job");
+          assertThat(result.stageLog()).contains("Submitted batch job");
+        },
+        result -> {
+          assertThat(result.isSuccess()).isFalse();
+          assertThat(result.exitCode()).isNull();
+          assertThat(result.state()).isEqualTo(StageExecutorState.MEMORY_ERROR);
+          assertThat(result.attribute(StageExecutorResultAttribute.SLURM_STATE))
+              .isEqualTo("OUT_OF_MEMORY");
         });
   }
 }

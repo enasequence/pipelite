@@ -33,7 +33,6 @@ import pipelite.executor.describe.recover.LsfExecutorRecoverJob;
 import pipelite.service.*;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
 import pipelite.stage.parameters.cmd.LogFileSavePolicy;
 import pipelite.test.configuration.PipeliteTestConfigWithManager;
@@ -122,7 +121,7 @@ public class SimpleLsfExecutorPollJobsTest {
     mockPollJobs(result -> result.success());
     StageExecutorResult result = execute(executor);
     assertThat(result.isSuccess()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.exitCode()).isEqualTo("0");
   }
 
   @Test
@@ -131,7 +130,7 @@ public class SimpleLsfExecutorPollJobsTest {
     mockPollJobs(result -> result.executionError(1));
     StageExecutorResult result = execute(executor);
     assertThat(result.isError()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("1");
+    assertThat(result.exitCode()).isEqualTo("1");
   }
 
   @Test
@@ -140,6 +139,6 @@ public class SimpleLsfExecutorPollJobsTest {
     mockPollJobs(result -> result.lostError());
     StageExecutorResult result = execute(executor);
     assertThat(result.isLostError()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNull();
+    assertThat(result.exitCode()).isNull();
   }
 }

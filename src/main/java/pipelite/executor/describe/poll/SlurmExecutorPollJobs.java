@@ -10,9 +10,7 @@
  */
 package pipelite.executor.describe.poll;
 
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
@@ -24,6 +22,7 @@ import pipelite.executor.describe.context.executor.SlurmExecutorContext;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 
 @Component
 @Flogger
@@ -38,7 +37,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
   private static final int SQUEUE_COLUMNS = 3;
   private static final int SQUEUE_COLUMN_JOB_ID = 0;
   private static final int SQUEUE_COLUMN_STATE = 1;
-  // private static final int SQUEUE_COLUMN_EXIT_CODE = 2;
+  private static final int SQUEUE_COLUMN_EXIT_CODE = 2;
 
   private static final String SACCT_CMD =
       "sacct -p --format JobId,State,ExitCode,TotalCPU,MaxRSS,Elapsed,NodeList -j ";
@@ -67,19 +66,35 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
   private static final String SACCT_BATCH_STEP = "batch";
 
   private static final String JOB_STATE_COMPLETED = "COMPLETED";
-  private static final String JOB_STATE_TIMEOUT = "TIMEOUT";
-  private static final List<String> JOB_STATE_FAILED =
-      Arrays.asList(
-          "FAILED",
-          "BOOT_FAIL",
-          "CANCELLED",
-          "DEADLINE",
-          "FAILED",
-          "NODE_FAIL",
-          "OUT_OF_MEMORY",
-          "PREEMPTED",
-          "REVOKED",
-          JOB_STATE_TIMEOUT);
+
+  private enum SlurmErrorState {
+    JOB_STATE_ERROR_FAILED("FAILED", StageExecutorState.EXECUTION_ERROR),
+    JOB_STATE_ERROR_TIMEOUT("TIMEOUT", StageExecutorState.TIMEOUT_ERROR),
+    JOB_STATE_ERROR_OUT_OF_MEMORY("OUT_OF_MEMORY", StageExecutorState.MEMORY_ERROR),
+    JOB_STATE_ERROR_BOOT_FAIL("BOOT_FAIL", StageExecutorState.TERMINATED_ERROR),
+    JOB_STATE_ERROR_NODE_FAIL("NODE_FAIL", StageExecutorState.TERMINATED_ERROR),
+    JOB_STATE_ERROR_PREEMPTED("PREEMPTED", StageExecutorState.TERMINATED_ERROR),
+    JOB_STATE_ERROR_DEADLINE("DEADLINE", StageExecutorState.TERMINATED_ERROR),
+    JOB_STATE_ERROR_CANCELLED("CANCELLED", StageExecutorState.TERMINATED_ERROR),
+    JOB_STATE_ERROR_REVOKED("REVOKED", StageExecutorState.TERMINATED_ERROR);
+
+    public final String slurmState;
+    public final StageExecutorState state;
+
+    SlurmErrorState(String slurmState, StageExecutorState state) {
+      this.slurmState = slurmState;
+      this.state = state;
+    }
+
+    public static SlurmErrorState from(String slurmState) {
+      for (SlurmErrorState state : values()) {
+        if (state.slurmState.equals(slurmState)) {
+          return state;
+        }
+      }
+      return null;
+    }
+  }
 
   @Override
   public DescribeJobsResults<SlurmRequestContext> pollJobs(
@@ -147,25 +162,22 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     DescribeJobsResult.Builder resultBuilder = DescribeJobsResult.builder(requests, jobId);
 
     String state = column[SQUEUE_COLUMN_STATE];
+    SlurmErrorState slurmErrorState = SlurmErrorState.from(state);
     if (JOB_STATE_COMPLETED.equals(state)) {
-      resultBuilder.success();
-    } else if (JOB_STATE_FAILED.contains(state)) {
-      if (JOB_STATE_TIMEOUT.equals(state)) {
-        resultBuilder.timeoutError();
-      } else {
-        // TODO: SLURM exit code is not correctly reported by squeue.
-        // https://bugs.schedmd.com/show_bug.cgi?id=15462
-        // String exitCode = column[SQUEUE_COLUMN_EXIT_CODE];
-        // result.executionError(exitCode);
-        resultBuilder.executionError();
-      }
+      resultBuilderSuccess(resultBuilder, state);
+    } else if (slurmErrorState != null) {
+      String exitCodeWithSignal = column[SQUEUE_COLUMN_EXIT_CODE];
+      resultBuilderError(resultBuilder, slurmErrorState, exitCodeWithSignal);
     } else {
       resultBuilder.active();
     }
 
-    if (resultBuilder.isCompleted()) {
-      extractJobResultUsingSacct(executorContext, resultBuilder);
-    }
+    // SLURM exit code was not correctly reported by squeue.
+    // This was fixed in 22.05.6.
+    // https://bugs.schedmd.com/show_bug.cgi?id=15462
+    //  if (resultBuilder.isCompleted()) {
+    //   extractJobResultUsingSacct(executorContext, resultBuilder);
+    // }
 
     return resultBuilder.build();
   }
@@ -212,19 +224,16 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     String step = extractSacctStep(jobIdWithStep);
     if (step.equals(SACCT_NO_STEP)) {
       String state = column[SACCT_COLUMN_STATE];
+      SlurmErrorState slurmErrorState = SlurmErrorState.from(state);
       if (JOB_STATE_COMPLETED.equals(state)) {
-        resultBuilder.success();
-      } else if (JOB_STATE_FAILED.contains(state)) {
-        if (JOB_STATE_TIMEOUT.equals(state)) {
-          resultBuilder.timeoutError();
-        } else {
-          String exitCodeWithSignal = column[SACCT_COLUMN_EXIT_CODE];
-          String exitCode = extractSacctExitCode(exitCodeWithSignal);
-          resultBuilder.executionError(exitCode);
-        }
+        resultBuilderSuccess(resultBuilder, state);
+      } else if (slurmErrorState != null) {
+        String exitCodeWithSignal = column[SACCT_COLUMN_EXIT_CODE];
+        resultBuilderError(resultBuilder, slurmErrorState, exitCodeWithSignal);
       } else {
         resultBuilder.active();
       }
+
       if (resultBuilder.isCompleted()) {
         resultBuilder.attribute(
             StageExecutorResultAttribute.ELAPSED_TIME, column[SACCT_COLUMN_ELAPSED]);
@@ -260,6 +269,37 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       return exitCodeWithSignal.split(":")[0];
     } catch (Exception ex) {
       throw new PipeliteException("Unexpected sacct exit code with signal: " + exitCodeWithSignal);
+    }
+  }
+
+  /**
+   * Execution finished with success.
+   *
+   * @param resultBuilder the result builder
+   * @param slurmErrorState the slurm error state
+   * @param exitCodeWithSignal the slurm exit code with signal
+   */
+  private static void resultBuilderSuccess(DescribeJobsResult.Builder resultBuilder, String state) {
+    resultBuilder.success();
+    resultBuilder.attribute(StageExecutorResultAttribute.SLURM_STATE, state);
+  }
+
+  /**
+   * Execution finished with error.
+   *
+   * @param resultBuilder the result builder
+   * @param slurmErrorState the slurm error state
+   * @param exitCodeWithSignal the slurm exit code with signal
+   */
+  private static void resultBuilderError(
+      DescribeJobsResult.Builder resultBuilder,
+      SlurmErrorState slurmErrorState,
+      String exitCodeWithSignal) {
+    resultBuilder.result(slurmErrorState.state);
+    resultBuilder.attribute(StageExecutorResultAttribute.SLURM_STATE, slurmErrorState.slurmState);
+    if (slurmErrorState == SlurmErrorState.JOB_STATE_ERROR_FAILED) {
+      String exitCode = extractSacctExitCode(exitCodeWithSignal);
+      resultBuilder.executionError(exitCode);
     }
   }
 }

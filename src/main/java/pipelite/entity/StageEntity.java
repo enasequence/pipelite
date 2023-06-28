@@ -22,7 +22,6 @@ import pipelite.entity.field.ErrorType;
 import pipelite.entity.field.StageState;
 import pipelite.json.Json;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 
 @Entity
 @Table(name = "PIPELITE2_STAGE")
@@ -118,7 +117,7 @@ public class StageEntity {
     this.errorType = ErrorType.from(result, permanentErrors);
     this.endTime = ZonedDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     this.resultParams = result.attributesJson();
-    String exitCodeAttribute = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
+    String exitCodeAttribute = result.exitCode();
     try {
       this.exitCode = Integer.parseInt(exitCodeAttribute);
     } catch (Exception e) {

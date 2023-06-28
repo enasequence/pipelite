@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import pipelite.entity.StageEntity;
 import pipelite.entity.field.ErrorType;
 import pipelite.entity.field.StageState;
+import pipelite.exception.PipeliteException;
 import pipelite.executor.SyncTestExecutor;
 import pipelite.process.Process;
 import pipelite.process.builder.ProcessBuilder;
@@ -895,7 +896,27 @@ public class DependencyResolverTest {
               .attribute(StageExecutorResultAttribute.EXIT_CODE, "1"),
           List.of(1));
     } else {
-      stageEntity.endExecution(StageExecutorResult.create(errorType), Collections.emptyList());
+      stageEntity.endExecution(create(errorType), Collections.emptyList());
     }
+  }
+
+  private static StageExecutorResult create(ErrorType errorType) {
+    switch (errorType) {
+      case EXECUTION_ERROR:
+        return StageExecutorResult.create(StageExecutorState.EXECUTION_ERROR);
+      case PERMANENT_ERROR:
+        return StageExecutorResult.create(StageExecutorState.EXECUTION_ERROR);
+      case TIMEOUT_ERROR:
+        return StageExecutorResult.create(StageExecutorState.TIMEOUT_ERROR);
+      case MEMORY_ERROR:
+        return StageExecutorResult.create(StageExecutorState.MEMORY_ERROR);
+      case TERMINATED_ERROR:
+        return StageExecutorResult.create(StageExecutorState.TERMINATED_ERROR);
+      case LOST_ERROR:
+        return StageExecutorResult.create(StageExecutorState.LOST_ERROR);
+      case INTERNAL_ERROR:
+        return StageExecutorResult.create(StageExecutorState.INTERNAL_ERROR);
+    }
+    throw new PipeliteException("Invalid error type");
   }
 }

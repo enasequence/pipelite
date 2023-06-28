@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorState;
 
 public class DescribeJobsResultTest {
@@ -63,40 +62,13 @@ public class DescribeJobsResultTest {
     assertThat(DescribeJobsResult.builder(request).lostError().isCompleted()).isTrue();
     assertThat(DescribeJobsResult.builder(request).success().isCompleted()).isTrue();
 
-    assertThat(
-            DescribeJobsResult.builder(request)
-                .active()
-                .build()
-                .result
-                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+    assertThat(DescribeJobsResult.builder(request).active().build().result.exitCode()).isNull();
+    assertThat(DescribeJobsResult.builder(request).executionError().build().result.exitCode())
         .isNull();
-    assertThat(
-            DescribeJobsResult.builder(request)
-                .executionError()
-                .build()
-                .result
-                .attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isNull();
-    assertThat(
-            DescribeJobsResult.builder(request)
-                .executionError(1)
-                .build()
-                .result
-                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+    assertThat(DescribeJobsResult.builder(request).executionError(1).build().result.exitCode())
         .isEqualTo("1");
-    assertThat(
-            DescribeJobsResult.builder(request)
-                .lostError()
-                .build()
-                .result
-                .attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isNull();
-    assertThat(
-            DescribeJobsResult.builder(request)
-                .success()
-                .build()
-                .result
-                .attribute(StageExecutorResultAttribute.EXIT_CODE))
+    assertThat(DescribeJobsResult.builder(request).lostError().build().result.exitCode()).isNull();
+    assertThat(DescribeJobsResult.builder(request).success().build().result.exitCode())
         .isEqualTo("0");
 
     assertThat(

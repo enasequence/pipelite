@@ -15,7 +15,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.test.PipeliteTestIdCreator;
 
@@ -57,7 +56,7 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
     StageExecutorResult result = cmdRunner.execute("echo test");
     assertThat(result.isError()).isFalse();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.exitCode()).isEqualTo("0");
     assertThat(result.stdOut()).startsWith("test");
     assertThat(result.stageLog()).startsWith("test");
   }
@@ -67,6 +66,6 @@ public class LocalCmdRunnerTest {
     LocalCmdRunner cmdRunner = new LocalCmdRunner(CmdExecutorParameters.builder().build());
     StageExecutorResult result = cmdRunner.execute(PipeliteTestIdCreator.id());
     assertThat(result.isError()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
+    assertThat(result.exitCode()).isNotEqualTo("0");
   }
 }

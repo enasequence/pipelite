@@ -31,7 +31,6 @@ import pipelite.executor.KubernetesExecutor;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.tester.pipeline.ExecutorTestExitCode;
 
 public class TestType {
@@ -371,7 +370,7 @@ public class TestType {
                     TestType testType = testType(key);
                     testTypeRef.set(testType);
 
-                    String lastExitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
+                    String lastExitCode = result.exitCode();
                     if (lastExitCode != null) {
                       setLastExitCode(lastExitCode, key);
                     }

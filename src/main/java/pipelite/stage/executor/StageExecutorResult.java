@@ -15,8 +15,6 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.util.Assert;
-import pipelite.entity.field.ErrorType;
-import pipelite.exception.PipeliteException;
 import pipelite.json.Json;
 
 public class StageExecutorResult {
@@ -36,20 +34,6 @@ public class StageExecutorResult {
   public static StageExecutorResult create(StageExecutorState state) {
     Assert.notNull(state, "Missing state");
     return new StageExecutorResult(state);
-  }
-
-  public static StageExecutorResult create(ErrorType errorType) {
-    switch (errorType) {
-      case EXECUTION_ERROR:
-        return new StageExecutorResult(StageExecutorState.EXECUTION_ERROR);
-      case TIMEOUT_ERROR:
-        return new StageExecutorResult(StageExecutorState.TIMEOUT_ERROR);
-      case LOST_ERROR:
-        return new StageExecutorResult(StageExecutorState.LOST_ERROR);
-      case INTERNAL_ERROR:
-        return new StageExecutorResult(StageExecutorState.INTERNAL_ERROR);
-    }
-    throw new PipeliteException("Invalid error type");
   }
 
   public static StageExecutorResult submitted() {
@@ -160,6 +144,10 @@ public class StageExecutorResult {
       this.attributes.putAll(result.attributes);
     }
     return this;
+  }
+
+  public String exitCode() {
+    return attributes.get(StageExecutorResultAttribute.EXIT_CODE);
   }
 
   public StageExecutorState state() {

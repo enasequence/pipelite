@@ -24,7 +24,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import pipelite.configuration.properties.SshTestConfiguration;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.parameters.CmdExecutorParameters;
 import pipelite.test.PipeliteTestIdCreator;
 import pipelite.test.configuration.PipeliteTestConfigWithServices;
@@ -65,7 +64,7 @@ public class SshCmdRunnerTest {
     SshCmdRunner cmdRunner = cmdRunner();
     StageExecutorResult result = cmdRunner.execute("echo test");
     assertThat(result.isError()).isFalse();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.exitCode()).isEqualTo("0");
     assertThat(result.stdOut()).startsWith("test");
     assertThat(result.stageLog()).startsWith("test");
   }
@@ -86,7 +85,7 @@ public class SshCmdRunnerTest {
             SshCmdRunner cmdRunner = cmdRunner();
             try {
               StageExecutorResult result = cmdRunner.execute("echo test" + j);
-              String exitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
+              String exitCode = result.exitCode();
               if (!exitCode.equals("0")) {
                 throw new PipeliteException("Unexpected exit code: " + exitCode);
               }
@@ -122,6 +121,6 @@ public class SshCmdRunnerTest {
     SshCmdRunner cmdRunner = cmdRunner();
     StageExecutorResult result = cmdRunner.execute(PipeliteTestIdCreator.id());
     assertThat(result.isError()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNotEqualTo("0");
+    assertThat(result.exitCode()).isNotEqualTo("0");
   }
 }

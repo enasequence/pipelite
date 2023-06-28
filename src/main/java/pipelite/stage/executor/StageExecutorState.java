@@ -19,8 +19,12 @@ public enum StageExecutorState {
   SUCCESS,
   /** The job has completed with an execution error. */
   EXECUTION_ERROR,
-  /** The job has completed with a timeout error. */
+  /** The job exceeded its time limit. */
   TIMEOUT_ERROR,
+  /** The job exceeded its memory limit. */
+  MEMORY_ERROR,
+  /** The job was terminated by the executor. */
+  TERMINATED_ERROR,
   /** The job has been lost. */
   LOST_ERROR,
   /** The job has completed with an internal error. */
@@ -33,6 +37,8 @@ public enum StageExecutorState {
   public boolean isError() {
     return this == EXECUTION_ERROR
         || this == TIMEOUT_ERROR
+        || this == MEMORY_ERROR
+        || this == TERMINATED_ERROR
         || this == LOST_ERROR
         || this == INTERNAL_ERROR;
   }

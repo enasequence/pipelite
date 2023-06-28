@@ -21,6 +21,7 @@ public class StageExecutorResultAttribute {
   public static final String AVG_MEM = "avg mem";
   public static final String MAX_MEM = "max mem";
   public static final String ELAPSED_TIME = "elapsed time";
+  public static final String SLURM_STATE = "slurm state";
 
   private StageExecutorResultAttribute() {}
 }

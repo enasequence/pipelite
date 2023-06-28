@@ -14,14 +14,15 @@ import com.google.common.primitives.Ints;
 import java.util.List;
 import pipelite.exception.PipeliteException;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorState;
 
 public enum ErrorType {
   EXECUTION_ERROR,
-  TIMEOUT_ERROR,
-  LOST_ERROR,
   PERMANENT_ERROR,
+  TIMEOUT_ERROR,
+  MEMORY_ERROR,
+  TERMINATED_ERROR,
+  LOST_ERROR,
   INTERNAL_ERROR;
 
   public static ErrorType from(StageExecutorResult result, List<Integer> permanentErrors) {
@@ -35,7 +36,7 @@ public enum ErrorType {
       case EXECUTION_ERROR:
         {
           if (permanentErrors != null && !permanentErrors.isEmpty()) {
-            String exitCode = result.attribute(StageExecutorResultAttribute.EXIT_CODE);
+            String exitCode = result.exitCode();
             if (exitCode != null) {
               Integer exitCodeInt = Ints.tryParse(exitCode);
               if (exitCodeInt != null) {
@@ -49,6 +50,10 @@ public enum ErrorType {
         }
       case TIMEOUT_ERROR:
         return ErrorType.TIMEOUT_ERROR;
+      case MEMORY_ERROR:
+        return ErrorType.MEMORY_ERROR;
+      case TERMINATED_ERROR:
+        return ErrorType.TERMINATED_ERROR;
       case LOST_ERROR:
         return ErrorType.LOST_ERROR;
       case INTERNAL_ERROR:
@@ -58,6 +63,6 @@ public enum ErrorType {
   }
 
   public boolean isPermanentError() {
-    return this == TIMEOUT_ERROR || this == PERMANENT_ERROR;
+    return this == TIMEOUT_ERROR || this == MEMORY_ERROR || this == PERMANENT_ERROR;
   }
 }

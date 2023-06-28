@@ -25,7 +25,7 @@ import pipelite.executor.describe.poll.PollJobs;
 import pipelite.executor.describe.recover.RecoverJob;
 import pipelite.service.InternalErrorService;
 import pipelite.stage.executor.StageExecutorResult;
-import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 import pipelite.time.Time;
 
 public class DescribeJobsTest {
@@ -61,7 +61,7 @@ public class DescribeJobsTest {
     return new DefaultRequestContext(String.valueOf(jobId));
   }
 
-  private static void testDescribeJobsWithMockPollJobs(StageExecutorResult result) {
+  private static void testDescribeJobsWithMockPollJobs(StageExecutorState state) {
     int requestLimit = 10;
     int requestCnt = 20;
 
@@ -77,7 +77,7 @@ public class DescribeJobsTest {
               .get()
               .forEach(
                   request ->
-                      results.add(DescribeJobsResult.builder(request).result(result).build()));
+                      results.add(DescribeJobsResult.builder(request).result(state).build()));
           return results;
         };
 
@@ -111,10 +111,10 @@ public class DescribeJobsTest {
           .forEach(
               i -> {
                 StageExecutorResult actualResult = describeJobs.getResult(requestContext(i));
-                assertThat(actualResult.state()).isEqualTo(result.state());
+                assertThat(actualResult.state()).isEqualTo(state);
               });
 
-      if (result.isCompleted()) {
+      if (state.isCompleted()) {
         // Check that the requests have been removed.
         IntStream.range(0, requestCnt)
             .forEach(i -> assertThat(describeJobs.isRequest(requestContext(i))).isFalse());
@@ -128,12 +128,14 @@ public class DescribeJobsTest {
 
   @Test
   public void testDescribeJobsWithMockPollJobs() {
-    testDescribeJobsWithMockPollJobs(StageExecutorResult.success());
-    testDescribeJobsWithMockPollJobs(StageExecutorResult.executionError());
-    testDescribeJobsWithMockPollJobs(StageExecutorResult.timeoutError());
-    testDescribeJobsWithMockPollJobs(StageExecutorResult.internalError());
-    testDescribeJobsWithMockPollJobs(StageExecutorResult.lostError());
-    testDescribeJobsWithMockPollJobs(StageExecutorResult.active());
+    testDescribeJobsWithMockPollJobs(StageExecutorState.ACTIVE);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.SUCCESS);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.EXECUTION_ERROR);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.TIMEOUT_ERROR);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.MEMORY_ERROR);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.TERMINATED_ERROR);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.LOST_ERROR);
+    testDescribeJobsWithMockPollJobs(StageExecutorState.INTERNAL_ERROR);
   }
 
   @Test
@@ -232,14 +234,7 @@ public class DescribeJobsTest {
     assertThat(foundFirstResult.jobId()).isEqualTo(request.jobId());
     assertThat(foundFirstResult.result.isExecutionError()).isTrue();
     assertThat(foundFirstResult.result.isError()).isTrue();
-    assertThat(
-            results
-                .found()
-                .findFirst()
-                .get()
-                .result
-                .attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isEqualTo("1");
+    assertThat(results.found().findFirst().get().result.exitCode()).isEqualTo("1");
   }
 
   @Test

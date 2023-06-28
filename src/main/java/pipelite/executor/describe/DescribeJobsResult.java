@@ -16,6 +16,7 @@ import pipelite.exception.PipeliteException;
 import pipelite.executor.describe.context.request.DefaultRequestContext;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
+import pipelite.stage.executor.StageExecutorState;
 
 /** Job result. */
 @Flogger
@@ -101,9 +102,14 @@ public class DescribeJobsResult<RequestContext extends DefaultRequestContext> {
       return this;
     }
 
-    public Builder<RequestContext> result(StageExecutorResult result) {
-      this.result = result;
-      this.exitCode = null;
+    public Builder<RequestContext> result(StageExecutorState state) {
+      this.result = StageExecutorResult.create(state);
+      return this;
+    }
+
+    public Builder<RequestContext> result(StageExecutorState state, Integer exitCode) {
+      this.result = StageExecutorResult.create(state);
+      this.exitCode = exitCode;
       return this;
     }
 

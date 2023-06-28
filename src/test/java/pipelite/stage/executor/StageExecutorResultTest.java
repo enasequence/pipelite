@@ -14,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
-import pipelite.entity.field.ErrorType;
 
 public class StageExecutorResultTest {
 
@@ -102,18 +101,6 @@ public class StageExecutorResultTest {
     assertThat(StageExecutorResult.lostError().state()).isSameAs(StageExecutorState.LOST_ERROR);
     assertThat(StageExecutorResult.internalError().state())
         .isSameAs(StageExecutorState.INTERNAL_ERROR);
-  }
-
-  @Test
-  public void createFromErrorType() {
-    assertThat(StageExecutorResult.create(ErrorType.EXECUTION_ERROR).state())
-        .isEqualTo(StageExecutorState.EXECUTION_ERROR);
-    assertThat(StageExecutorResult.create(ErrorType.INTERNAL_ERROR).state())
-        .isEqualTo(StageExecutorState.INTERNAL_ERROR);
-    assertThat(StageExecutorResult.create(ErrorType.TIMEOUT_ERROR).state())
-        .isEqualTo(StageExecutorState.TIMEOUT_ERROR);
-    assertThat(StageExecutorResult.create(ErrorType.LOST_ERROR).state())
-        .isEqualTo(StageExecutorState.LOST_ERROR);
   }
 
   @Test

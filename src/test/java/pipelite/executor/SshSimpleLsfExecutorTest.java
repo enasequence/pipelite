@@ -52,13 +52,13 @@ public class SshSimpleLsfExecutorTest {
         result -> {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("bsub");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("echo test");
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("is submitted to");
           assertThat(result.stageLog()).contains("is submitted to");
         },
         result -> {
           assertThat(result.isSuccess()).isTrue();
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+          assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("test\n");
           assertThat(result.stageLog()).contains("test\n");
         });
@@ -87,7 +87,7 @@ public class SshSimpleLsfExecutorTest {
         },
         result -> {
           assertThat(result.isSuccess()).isFalse();
-          assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("5");
+          assertThat(result.exitCode()).isEqualTo("5");
         });
   }
 }

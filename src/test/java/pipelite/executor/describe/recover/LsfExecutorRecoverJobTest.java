@@ -75,7 +75,7 @@ public class LsfExecutorRecoverJobTest {
     String jobId = result.attribute(StageExecutorResultAttribute.JOB_ID);
 
     assertThat(result.isSuccess()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.exitCode()).isEqualTo("0");
     assertThat(jobId).isNotNull();
 
     LsfRequestContext requestContext = new LsfRequestContext(jobId, executor.getOutFile());
@@ -87,8 +87,7 @@ public class LsfExecutorRecoverJobTest {
 
     assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
     assertThat(describeJobsResult.result.isSuccess()).isTrue();
-    assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isEqualTo("0");
+    assertThat(describeJobsResult.result.exitCode()).isEqualTo("0");
   }
 
   @Test
@@ -99,7 +98,7 @@ public class LsfExecutorRecoverJobTest {
     String jobId = result.attribute(StageExecutorResultAttribute.JOB_ID);
 
     assertThat(result.isExecutionError()).isTrue();
-    assertThat(result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("1");
+    assertThat(result.exitCode()).isEqualTo("1");
     assertThat(jobId).isNotNull();
 
     LsfRequestContext requestContext = new LsfRequestContext(jobId, executor.getOutFile());
@@ -111,8 +110,7 @@ public class LsfExecutorRecoverJobTest {
 
     assertThat(describeJobsResult.jobId()).isEqualTo(jobId);
     assertThat(describeJobsResult.result.isExecutionError()).isTrue();
-    assertThat(describeJobsResult.result.attribute(StageExecutorResultAttribute.EXIT_CODE))
-        .isEqualTo("1");
+    assertThat(describeJobsResult.result.exitCode()).isEqualTo("1");
   }
 
   @Test
@@ -159,7 +157,7 @@ public class LsfExecutorRecoverJobTest {
                 + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
                 + "  1        0        0        0        0        0        1");
     assertThat(result.result.isSuccess()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.result.exitCode()).isEqualTo("0");
   }
 
   @Test
@@ -205,7 +203,7 @@ public class LsfExecutorRecoverJobTest {
                 + "test\n"
                 + "\n");
     assertThat(result.result.isSuccess()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("0");
+    assertThat(result.result.exitCode()).isEqualTo("0");
   }
 
   @Test
@@ -242,7 +240,7 @@ public class LsfExecutorRecoverJobTest {
                 + "  PEND     PSUSP    RUN      USUSP    SSUSP    UNKWN    TOTAL\n"
                 + "  1        0        0        0        0        0        1");
     assertThat(result.result.isExecutionError()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
+    assertThat(result.result.exitCode()).isEqualTo("127");
   }
 
   @Test
@@ -288,7 +286,7 @@ public class LsfExecutorRecoverJobTest {
                 + "/ebi/lsf/ebi-spool2/01/1611511573.6138156: line 8: dfsddf: command not found\n"
                 + "\n");
     assertThat(result.result.isExecutionError()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isEqualTo("127");
+    assertThat(result.result.exitCode()).isEqualTo("127");
   }
 
   @Test
@@ -332,7 +330,7 @@ public class LsfExecutorRecoverJobTest {
                 + "The output (if any) follows:\n"
                 + "\n");
     assertThat(result.result.isTimeoutError()).isTrue();
-    assertThat(result.result.attribute(StageExecutorResultAttribute.EXIT_CODE)).isNull();
+    assertThat(result.result.exitCode()).isNull();
   }
 
   @Test

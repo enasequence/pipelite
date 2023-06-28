@@ -44,7 +44,7 @@ class StageServiceTest {
   public static class TestExecutor extends SyncExecutor<ExecutorParameters>
       implements JsonSerializableExecutor {
 
-    private final StageState stageState;
+    private StageState stageState;
 
     public TestExecutor(StageState stageState) {
       this.stageState = stageState;

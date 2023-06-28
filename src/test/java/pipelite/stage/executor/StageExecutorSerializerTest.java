@@ -19,12 +19,14 @@ import pipelite.entity.StageEntity;
 import pipelite.entity.field.StageState;
 import pipelite.executor.JsonSerializableExecutor;
 import pipelite.executor.SimpleLsfExecutor;
+import pipelite.executor.SimpleSlurmExecutor;
 import pipelite.executor.SyncExecutor;
 import pipelite.service.InternalErrorService;
 import pipelite.service.StageService;
 import pipelite.stage.Stage;
 import pipelite.stage.parameters.ExecutorParameters;
 import pipelite.stage.parameters.SimpleLsfExecutorParameters;
+import pipelite.stage.parameters.SimpleSlurmExecutorParameters;
 
 public class StageExecutorSerializerTest {
 
@@ -165,6 +167,43 @@ public class StageExecutorSerializerTest {
     assertThat(stage.getExecutor()).isNotNull();
     assertThat(stage.getExecutor()).isInstanceOf(SimpleLsfExecutor.class);
     assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleLsfExecutor");
+    assertThat(stageEntity.getExecutorData())
+        .isEqualTo("{\n" + "  \"jobId\" : \"test\",\n" + "  \"cmd\" : \"test\"\n" + "}");
+    assertThat(stageEntity.getExecutorParams())
+        .isEqualTo(
+            "{\n"
+                + "  \"timeout\" : 604800000,\n"
+                + "  \"maximumRetries\" : 3,\n"
+                + "  \"immediateRetries\" : 3,\n"
+                + "  \"logSave\" : \"ERROR\",\n"
+                + "  \"logLines\" : 1000,\n"
+                + "  \"host\" : \"host\",\n"
+                + "  \"logTimeout\" : 10000,\n"
+                + "  \"queue\" : \"queue\"\n"
+                + "}");
+  }
+
+  @Test
+  public void deserializeSimpleSlurmExecutor() {
+    SimpleSlurmExecutor slurmExecutor = StageExecutor.createSimpleSlurmExecutor("test");
+    slurmExecutor.setJobId("test");
+
+    SimpleSlurmExecutorParameters params = new SimpleSlurmExecutorParameters();
+    params.setHost("host");
+    params.setQueue("queue");
+    slurmExecutor.setExecutorParams(params);
+
+    StageEntity stageEntity = new StageEntity();
+    Stage stage = Stage.builder().stageName("STAGE1").executor(slurmExecutor).build();
+    stage.setStageEntity(stageEntity);
+
+    stageEntity.startExecution();
+    StageService.prepareSaveStage(stage);
+
+    assertThat(StageExecutorSerializer.deserializeExecutor(stage, internalErrorService)).isTrue();
+    assertThat(stage.getExecutor()).isNotNull();
+    assertThat(stage.getExecutor()).isInstanceOf(SimpleSlurmExecutor.class);
+    assertThat(stageEntity.getExecutorName()).isEqualTo("pipelite.executor.SimpleSlurmExecutor");
     assertThat(stageEntity.getExecutorData())
         .isEqualTo("{\n" + "  \"jobId\" : \"test\",\n" + "  \"cmd\" : \"test\"\n" + "}");
     assertThat(stageEntity.getExecutorParams())

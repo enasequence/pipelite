@@ -55,6 +55,15 @@ pipeline and schedule configurations that should be in ```pipelite.pipeline``` a
 This will allow pipeline and schedule configurations to be picked up pipelite while no other classes will accidentially
 override any pipelite classes.
 
+### Tested versions
+
+- Slurm: 23.02.0
+- LSF: 10.1.0.13
+
+### Minimum versions
+
+- Slurm: 22.05.6 (https://bugs.schedmd.com/show_bug.cgi?id=15462)
+
 ### How to start up Pipelite
 
 Pipelite is a Spring java application distributed as a regular maven jar archive. The jar should be added as a
@@ -620,6 +629,8 @@ The Pipeline process stages are stored in this table with associated execution i
   - EXECUTION_ERROR: command execution failed with an exit code not registered as a permanent error.
   - PERMANENT_ERROR: command execution failed with an exit code registered as a permanent error.
   - TIMEOUT_ERROR: command execution timeout. No exit code is available.
+  - MEMORY_ERROR: command execution run out of memory. No exit code is available.
+  - TERMINATED_ERROR: command execution was terminated by the executor backend. No exit code is available.
   - LOST_ERROR: command execution result was lost. No exit code is available.
   - INTERNAL_ERROR: internal error. No exit code is available.
 
