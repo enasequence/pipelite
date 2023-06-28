@@ -38,7 +38,7 @@ public class SshSimpleSlurmExecutorTest {
 
   @Test
   public void testExecuteSuccess() {
-    SimpleSlurmExecutor executor = StageExecutor.createSimpleSlurmExecutor("echo test");
+    SimpleSlurmExecutor executor = StageExecutor.createSimpleSlurmExecutor("echo \"test\"");
     executor.setExecutorParams(
         SimpleSlurmExecutorParameters.builder()
             .host(slurmTestConfiguration.getHost())
@@ -56,26 +56,19 @@ public class SshSimpleSlurmExecutorTest {
         executor,
         pipeliteServices,
         result -> {
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .startsWith("sbatch << EOF");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("sbatch");
 
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --job-name=");
+              .contains(" --job-name=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" --output=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -n 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --output=");
+              .contains(" --mem=\"1\"");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -t 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -n 1");
+              .contains(" -p standard");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --mem=\"1\"");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -t 1");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -p standard");
-
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("mkdir -p");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("echo test >");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
+              .endsWith("\"echo \\\"test\\\"\"");
           assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");
@@ -111,25 +104,18 @@ public class SshSimpleSlurmExecutorTest {
         executor,
         pipeliteServices,
         result -> {
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .startsWith("sbatch << EOF");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("sbatch");
 
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --job-name=");
+              .contains(" --job-name=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" --output=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -n 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --output=");
+              .contains(" --mem=\"1\"");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -t 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -n 1");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --mem=\"1\"");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -t 1");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -p standard");
-
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("mkdir -p");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("exit 5 >");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
+              .contains(" -p standard");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("\"exit 5\"");
           assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");
@@ -164,26 +150,19 @@ public class SshSimpleSlurmExecutorTest {
         executor,
         pipeliteServices,
         result -> {
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .startsWith("sbatch << EOF");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).startsWith("sbatch");
 
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --job-name=");
+              .contains(" --job-name=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" --output=");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -n 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --output=");
+              .contains(" --mem=\"1\"");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -t 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -n 1");
+              .contains(" -p standard");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH --mem=\"1\"");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -t 1");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("#SBATCH -p standard");
-
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains("mkdir -p");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
-              .contains("dd bs=50M if=/dev/zero of=/dev/null >");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).endsWith("2>&1\nEOF");
+              .endsWith("\"dd bs=50M if=/dev/zero of=/dev/null\"");
           assertThat(result.exitCode()).isEqualTo("0");
           assertThat(result.stdOut()).contains("Submitted batch job");
           assertThat(result.stageLog()).contains("Submitted batch job");

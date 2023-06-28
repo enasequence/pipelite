@@ -27,41 +27,30 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
   // Json deserialization requires a no argument constructor.
   public SimpleSlurmExecutor() {}
 
-  private static class JobScriptBuilder {
+  private static class SlurmArgumentBuilder {
     private final StringBuilder script = new StringBuilder();
 
-    public JobScriptBuilder() {
-      line("#!/bin/bash");
-    }
-
-    public JobScriptBuilder shortOption(String option) {
-      script.append("#SBATCH -");
+    public SlurmArgumentBuilder shortOption(String option) {
+      script.append(" -");
       script.append(option);
       script.append("\n");
       return this;
     }
 
-    public JobScriptBuilder shortOption(String option, String value) {
-      script.append("#SBATCH -");
+    public SlurmArgumentBuilder shortOption(String option, String value) {
+      script.append(" -");
       script.append(option);
       script.append(" ");
       script.append(value);
-      script.append("\n");
       return this;
     }
 
-    public JobScriptBuilder longOption(String option, String value) {
-      script.append("#SBATCH --");
+    public SlurmArgumentBuilder longOption(String option, String value) {
+      script.append(" --");
       script.append(option);
       script.append("=\"");
       script.append(value);
-      script.append("\"\n");
-      return this;
-    }
-
-    public JobScriptBuilder line(String line) {
-      script.append(line);
-      script.append("\n");
+      script.append("\"");
       return this;
     }
 
@@ -84,20 +73,16 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
             + ":"
             + request.getProcessId();
 
-    JobScriptBuilder script = new JobScriptBuilder();
+    SlurmArgumentBuilder args = new SlurmArgumentBuilder();
 
     // Options
 
-    // TODO: SLURM to create the output directory once version 23.02 is available
-    // to preserve SLURM script execution output instead of sending it to dev/null.
-
-    script.longOption("job-name", jobName);
-    script.longOption("output", "/dev/null");
-    script.longOption("error", "/dev/null");
+    args.longOption("job-name", jobName);
+    args.longOption("output", logFile);
 
     Integer cpu = getExecutorParams().getCpu();
     if (cpu != null && cpu > 0) {
-      script.shortOption("n", Integer.toString(cpu));
+      args.shortOption("n", Integer.toString(cpu));
     }
 
     Integer memory = getExecutorParams().getMemory();
@@ -108,7 +93,7 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
       if (null != memoryUnits) {
         memStr += memoryUnits;
       }
-      script.longOption("mem", memStr);
+      args.longOption("mem", memStr);
     }
 
     Duration timeout = getExecutorParams().getTimeout();
@@ -118,28 +103,20 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
     if (timeout.toMinutes() == 0) {
       timeout = Duration.ofMinutes(1);
     }
-    script.shortOption("t", String.valueOf(timeout.toMinutes()));
+    args.shortOption("t", String.valueOf(timeout.toMinutes()));
 
     String account = getExecutorParams().getAccount();
     if (account != null) {
-      script.shortOption("A", account);
+      args.shortOption("A", account);
     }
 
     String queue = getExecutorParams().getQueue();
     if (queue != null) {
-      script.shortOption("p", queue);
+      args.shortOption("p", queue);
     }
 
-    // Create log directory
-
-    script.line("mkdir -p " + logDir);
-
-    // Run command and direct output to log file
-
-    script.line(getCmd() + " > " + logFile + " 2>&1");
-
+    // Escape double quotes in command and run it
     StringBuilder cmd = getSharedSubmitCmd(request);
-
-    return cmd.toString() + " << EOF\n" + script.build() + "EOF";
+    return cmd.toString() + args.build() + " --wrap=\"" + getCmd().replace("\"", "\\\"") + "\"";
   }
 }

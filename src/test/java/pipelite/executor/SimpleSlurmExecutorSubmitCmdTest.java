@@ -59,30 +59,24 @@ public class SimpleSlurmExecutorSubmitCmdTest {
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
-            "sbatch << EOF\n"
-                + "#!/bin/bash\n"
-                + "#SBATCH --job-name=\""
+            "sbatch"
+                + " --job-name=\""
                 + PIPELINE_NAME
                 + ":"
                 + STAGE_NAME
                 + ":"
                 + PROCESS_ID
-                + "\"\n"
-                + "#SBATCH --output=\"/dev/null\"\n"
-                + "#SBATCH --error=\"/dev/null\"\n"
-                + "#SBATCH -n 2\n"
-                + "#SBATCH --mem=\"1M\"\n"
-                + "#SBATCH -t 1\n"
-                + "#SBATCH -p TEST\n"
-                + "mkdir -p "
-                + logDir
-                + "\n"
-                + "test > "
+                + "\""
+                + " --output=\""
                 + logDir
                 + "/"
                 + logFileName
-                + " 2>&1\n"
-                + "EOF");
+                + "\""
+                + " -n 2"
+                + " --mem=\"1M\""
+                + " -t 1"
+                + " -p TEST"
+                + " --wrap=\"test\"");
   }
 
   @Test
@@ -116,30 +110,24 @@ public class SimpleSlurmExecutorSubmitCmdTest {
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
-            "sbatch << EOF\n"
-                + "#!/bin/bash\n"
-                + "#SBATCH --job-name=\""
+            "sbatch"
+                + " --job-name=\""
                 + PIPELINE_NAME
                 + ":"
                 + STAGE_NAME
                 + ":"
                 + PROCESS_ID
-                + "\"\n"
-                + "#SBATCH --output=\"/dev/null\"\n"
-                + "#SBATCH --error=\"/dev/null\"\n"
-                + "#SBATCH -n 2\n"
-                + "#SBATCH --mem=\"1\"\n"
-                + "#SBATCH -t 1\n"
-                + "#SBATCH -p TEST\n"
-                + "mkdir -p "
-                + logDir
-                + "\n"
-                + "test > "
+                + "\""
+                + " --output=\""
                 + logDir
                 + "/"
                 + logFileName
-                + " 2>&1\n"
-                + "EOF");
+                + "\""
+                + " -n 2"
+                + " --mem=\"1\""
+                + " -t 1"
+                + " -p TEST"
+                + " --wrap=\"test\"");
   }
 
   @Test
@@ -175,30 +163,24 @@ public class SimpleSlurmExecutorSubmitCmdTest {
     String submitCmd = executor.getSubmitCmd(request);
     assertThat(submitCmd)
         .isEqualTo(
-            "sbatch << EOF\n"
-                + "#!/bin/bash\n"
-                + "#SBATCH --job-name=\""
+            "sbatch"
+                + " --job-name=\""
                 + PIPELINE_NAME
                 + ":"
                 + STAGE_NAME
                 + ":"
                 + PROCESS_ID
-                + "\"\n"
-                + "#SBATCH --output=\"/dev/null\"\n"
-                + "#SBATCH --error=\"/dev/null\"\n"
-                + "#SBATCH -n 2\n"
-                + "#SBATCH --mem=\"1M\"\n"
-                + "#SBATCH -t 1\n"
-                + "#SBATCH -A ACCOUNT\n"
-                + "#SBATCH -p TEST\n"
-                + "mkdir -p "
-                + logDir
-                + "\n"
-                + "test > "
+                + "\""
+                + " --output=\""
                 + logDir
                 + "/"
                 + logFileName
-                + " 2>&1\n"
-                + "EOF");
+                + "\""
+                + " -n 2"
+                + " --mem=\"1M\""
+                + " -t 1"
+                + " -A ACCOUNT"
+                + " -p TEST"
+                + " --wrap=\"test\"");
   }
 }
