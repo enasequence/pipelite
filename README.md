@@ -2,6 +2,8 @@ Pipelite workflow manager
 =======
 
 - [Overview](#overview)
+- [Tested versions](#tested-versions)
+- [Minimum versions](#minimum-versions)
 - [How to start up Pipelite](#how-to-start-up-pipelite)
 - [How to configure schedules](#how-to-configure-schedules)
   * [SimpleLsfExecutor example](#simplelsfexecutor-example)
