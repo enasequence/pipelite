@@ -62,7 +62,7 @@ override any pipelite classes.
 
 ### Minimum versions
 
-- Slurm: 22.05.6 (https://bugs.schedmd.com/show_bug.cgi?id=15462)
+- Slurm: 23.02.0
 
 ### How to start up Pipelite
 
