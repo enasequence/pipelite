@@ -82,7 +82,7 @@ public class SimpleSlurmExecutor extends AbstractSlurmExecutor<SimpleSlurmExecut
 
     Integer cpu = getExecutorParams().getCpu();
     if (cpu != null && cpu > 0) {
-      args.shortOption("n", Integer.toString(cpu));
+      args.shortOption("c", Integer.toString(cpu));
     }
 
     Integer memory = getExecutorParams().getMemory();
