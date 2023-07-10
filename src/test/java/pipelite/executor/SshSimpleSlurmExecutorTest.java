@@ -61,7 +61,7 @@ public class SshSimpleSlurmExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains(" --job-name=");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" --output=");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -n 1");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -c 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains(" --mem=\"1\"");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -t 1");
@@ -109,7 +109,7 @@ public class SshSimpleSlurmExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains(" --job-name=");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" --output=");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -n 1");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -c 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains(" --mem=\"1\"");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -t 1");
@@ -155,7 +155,7 @@ public class SshSimpleSlurmExecutorTest {
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains(" --job-name=");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" --output=");
-          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -n 1");
+          assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -c 1");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND))
               .contains(" --mem=\"1\"");
           assertThat(result.attribute(StageExecutorResultAttribute.COMMAND)).contains(" -t 1");

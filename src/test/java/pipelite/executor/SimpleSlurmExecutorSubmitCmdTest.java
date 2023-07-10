@@ -72,7 +72,7 @@ public class SimpleSlurmExecutorSubmitCmdTest {
                 + "/"
                 + logFileName
                 + "\""
-                + " -n 2"
+                + " -c 2"
                 + " --mem=\"1M\""
                 + " -t 1"
                 + " -p TEST"
@@ -123,7 +123,7 @@ public class SimpleSlurmExecutorSubmitCmdTest {
                 + "/"
                 + logFileName
                 + "\""
-                + " -n 2"
+                + " -c 2"
                 + " --mem=\"1\""
                 + " -t 1"
                 + " -p TEST"
@@ -176,7 +176,7 @@ public class SimpleSlurmExecutorSubmitCmdTest {
                 + "/"
                 + logFileName
                 + "\""
-                + " -n 2"
+                + " -c 2"
                 + " --mem=\"1M\""
                 + " -t 1"
                 + " -A ACCOUNT"
