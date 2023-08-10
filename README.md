@@ -298,7 +298,7 @@ public class MyPipeline implements Pipelite.Pipeline {
   }
 
   @Override
-  public PrioritizedProcess nextProcess() {
+  public Process nextProcess() {
     // To be implemented by the user.
   }
 
