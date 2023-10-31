@@ -12,6 +12,7 @@ package pipelite.executor.describe.poll;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
 import pipelite.exception.PipeliteException;
@@ -162,15 +163,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     DescribeJobsResult.Builder resultBuilder = DescribeJobsResult.builder(requests, jobId);
 
     String state = column[SQUEUE_COLUMN_STATE];
-    SlurmErrorState slurmErrorState = SlurmErrorState.from(state);
-    if (JOB_STATE_COMPLETED.equals(state)) {
-      resultBuilderSuccess(resultBuilder, state);
-    } else if (slurmErrorState != null) {
-      String exitCodeWithSignal = column[SQUEUE_COLUMN_EXIT_CODE];
-      resultBuilderError(resultBuilder, slurmErrorState, exitCodeWithSignal);
-    } else {
-      resultBuilder.active();
-    }
+    extractJobResult(resultBuilder, state, column[SQUEUE_COLUMN_EXIT_CODE]);
 
     // SLURM exit code was not correctly reported by squeue.
     // This was fixed in 22.05.6.
@@ -184,6 +177,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
   public static DescribeJobsResult<SlurmRequestContext> extractJobResultUsingSacct(
       SlurmExecutorContext executorContext, DescribeJobsResult.Builder resultBuilder) {
+    AtomicReference<String> slurmJobState = new AtomicReference<>();
     StageExecutorResult result =
         executorContext.cmdRunner().execute(SACCT_CMD + resultBuilder.jobId());
     if (result.isError()) {
@@ -201,15 +195,33 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
           throw new PipeliteException("Unexpected SLURM sacct header line: " + line);
         }
       } else {
-        extractJobResultUsingSacct(resultBuilder, line);
+        extractJobResultUsingSacct(resultBuilder, line, slurmJobState);
       }
     }
 
-    return resultBuilder.build();
+    DescribeJobsResult<SlurmRequestContext> describeJobsResult = resultBuilder.build();
+    if (!describeJobsResult.result.isCompleted()) {
+      throw new PipeliteException("Unexpected SLURM sacct job state: " + slurmJobState.get());
+    }
+    return describeJobsResult;
+  }
+
+  private static void extractJobResult(
+      DescribeJobsResult.Builder resultBuilder, String state, String exitCodeWithSignal) {
+    SlurmErrorState slurmErrorState = SlurmErrorState.from(state);
+    if (JOB_STATE_COMPLETED.equals(state)) {
+      resultBuilderSuccess(resultBuilder, state);
+    } else if (slurmErrorState != null) {
+      resultBuilderError(resultBuilder, slurmErrorState, exitCodeWithSignal);
+    } else {
+      resultBuilder.active();
+    }
   }
 
   public static void extractJobResultUsingSacct(
-      DescribeJobsResult.Builder resultBuilder, String line) {
+      DescribeJobsResult.Builder resultBuilder,
+      String line,
+      AtomicReference<String> slurmJobState) {
     String[] column = line.trim().split("\\|");
     if (column.length != SACCT_COLUMNS) {
       throw new PipeliteException("Unexpected SLURM sacct output line: " + line);
@@ -224,15 +236,8 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     String step = extractSacctStep(jobIdWithStep);
     if (step.equals(SACCT_NO_STEP)) {
       String state = column[SACCT_COLUMN_STATE];
-      SlurmErrorState slurmErrorState = SlurmErrorState.from(state);
-      if (JOB_STATE_COMPLETED.equals(state)) {
-        resultBuilderSuccess(resultBuilder, state);
-      } else if (slurmErrorState != null) {
-        String exitCodeWithSignal = column[SACCT_COLUMN_EXIT_CODE];
-        resultBuilderError(resultBuilder, slurmErrorState, exitCodeWithSignal);
-      } else {
-        resultBuilder.active();
-      }
+      slurmJobState.set(state);
+      extractJobResult(resultBuilder, state, column[SACCT_COLUMN_EXIT_CODE]);
 
       if (resultBuilder.isCompleted()) {
         resultBuilder.attribute(
