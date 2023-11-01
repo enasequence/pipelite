@@ -13,7 +13,6 @@ package pipelite.executor.describe.poll;
 import com.google.common.flogger.FluentLogger;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
 import pipelite.exception.PipeliteException;
@@ -34,7 +33,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
   // Job steps https://slurm.schedmd.com/job_launch.html#job_records
 
   private static final String SQUEUE_CMD =
-      "squeue --me --states=all -O \"JobID:|,State:|,exit_code:|\"";
+      "squeue --all --me --states=all -O \"JobID:|,State:|,exit_code:|\"";
 
   private static final String SQUEUE_HEADER = "JOBID|STATE|EXIT_CODE|";
   private static final int SQUEUE_COLUMNS = 3;
@@ -136,15 +135,16 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       }
     }
 
-    List<String> lostJobIds = new LinkedList<>();
+    // List<String> lostJobIds = new LinkedList<>();
     for (String jobId : requests.jobIds()) {
       if (!jobIds.contains(jobId)) {
         // The job has been lost.
         results.add(DescribeJobsResult.builder(requests, jobId).lostError().build());
-        lostJobIds.add(jobId);
+        // lostJobIds.add(jobId);
       }
     }
 
+    /*
     if (!lostJobIds.isEmpty()) {
       logContext(
               log.atSevere(),
@@ -152,6 +152,7 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
               lostJobIds.stream().collect(Collectors.joining(",")))
           .log("Lost SLURM squeue job output: " + str);
     }
+    */
 
     return results;
   }
@@ -215,8 +216,10 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     if (!describeJobsResult.result.isCompleted()) {
       logContext(log.atSevere(), executorContext.executorName(), resultBuilder.jobId())
           .log("Unexpected SLURM sacct job state: " + slurmJobState.get());
+      /*
       logContext(log.atSevere(), executorContext.executorName(), resultBuilder.jobId())
           .log("Unexpected SLURM sacct job output: " + str);
+       */
     }
     return describeJobsResult;
   }
