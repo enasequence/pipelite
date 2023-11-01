@@ -11,9 +11,9 @@
 package pipelite.executor.describe.poll;
 
 import com.google.common.flogger.FluentLogger;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import lombok.extern.flogger.Flogger;
 import org.springframework.stereotype.Component;
 import pipelite.exception.PipeliteException;
@@ -136,11 +136,21 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       }
     }
 
+    List<String> lostJobIds = new LinkedList<>();
     for (String jobId : requests.jobIds()) {
       if (!jobIds.contains(jobId)) {
         // The job has been lost.
         results.add(DescribeJobsResult.builder(requests, jobId).lostError().build());
+        lostJobIds.add(jobId);
       }
+    }
+
+    if (!lostJobIds.isEmpty()) {
+      logContext(
+              log.atSevere(),
+              executorContext.executorName(),
+              lostJobIds.stream().collect(Collectors.joining(",")))
+          .log("Lost SLURM squeue job output: " + str);
     }
 
     return results;
@@ -205,6 +215,8 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
     if (!describeJobsResult.result.isCompleted()) {
       logContext(log.atSevere(), executorContext.executorName(), resultBuilder.jobId())
           .log("Unexpected SLURM sacct job state: " + slurmJobState.get());
+      logContext(log.atSevere(), executorContext.executorName(), resultBuilder.jobId())
+          .log("Unexpected SLURM sacct job output: " + str);
     }
     return describeJobsResult;
   }
