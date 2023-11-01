@@ -10,6 +10,7 @@
  */
 package pipelite.executor.describe.poll;
 
+import com.google.common.flogger.FluentLogger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -21,6 +22,7 @@ import pipelite.executor.describe.DescribeJobsResult;
 import pipelite.executor.describe.DescribeJobsResults;
 import pipelite.executor.describe.context.executor.SlurmExecutorContext;
 import pipelite.executor.describe.context.request.SlurmRequestContext;
+import pipelite.log.LogKey;
 import pipelite.stage.executor.StageExecutorResult;
 import pipelite.stage.executor.StageExecutorResultAttribute;
 import pipelite.stage.executor.StageExecutorState;
@@ -201,7 +203,8 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
 
     DescribeJobsResult<SlurmRequestContext> describeJobsResult = resultBuilder.build();
     if (!describeJobsResult.result.isCompleted()) {
-      throw new PipeliteException("Unexpected SLURM sacct job state: " + slurmJobState.get());
+      logContext(log.atSevere(), executorContext.executorName(), resultBuilder.jobId())
+          .log("Unexpected SLURM sacct job state: " + slurmJobState.get());
     }
     return describeJobsResult;
   }
@@ -306,5 +309,10 @@ public class SlurmExecutorPollJobs implements PollJobs<SlurmExecutorContext, Slu
       String exitCode = extractSacctExitCode(exitCodeWithSignal);
       resultBuilder.executionError(exitCode);
     }
+  }
+
+  private static FluentLogger.Api logContext(
+      FluentLogger.Api log, String executorName, String jobId) {
+    return log.with(LogKey.EXECUTOR_NAME, executorName).with(LogKey.JOB_ID, jobId);
   }
 }
